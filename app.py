@@ -182,11 +182,16 @@ def delete_employee(employee_id):
 @app.route('/api/stats', methods=['GET'])
 @login_required
 def get_stats():
-    """Récupère les statistiques des employés pour l'opérateur connecté"""
+    """Récupère les statistiques des employés"""
     try:
-        stats = employee_service.get_employee_stats(session['operator_id'])
-        return jsonify({"success": True, "stats": stats})
+        operator_id = session.get('operator_id')
+        if not operator_id:
+            return jsonify({"success": False, "error": "Opérateur non connecté"}), 401
+            
+        stats = employee_service.get_employee_stats(operator_id)
+        return jsonify(stats)
     except Exception as e:
+        print(f"Erreur lors de la récupération des statistiques: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/health')

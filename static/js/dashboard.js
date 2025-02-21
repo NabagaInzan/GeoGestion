@@ -5,54 +5,86 @@ $(document).ajaxError(function(event, jqXHR, settings, error) {
     }
 });
 
-$(document).ready(function() {
-    let employeesTable;
-    let currentEmployeeId = null;
+// Variable globale pour la table
+let employeesTable;
 
-    // Fonction pour formater le nom
-    function formatName(name) {
-        if (!name) return '';
-        return name.toUpperCase();
-    }
+// Fonction pour formater le nom
+function formatName(name) {
+    if (!name) return '';
+    return name.toUpperCase();
+}
 
-    // Fonction pour formater le prénom
-    function formatFirstName(name) {
-        if (!name) return '';
-        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-    }
+// Fonction pour formater le prénom
+function formatFirstName(name) {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
 
-    // Fonction pour réinitialiser les statistiques
-    function resetStats() {
-        $('#totalEmployees').text('--');
-        $('#availableEmployees').html('--');
-        $('#maleEmployees').text('--');
-        $('#femaleEmployees').text('--');
-    }
+// Fonction pour réinitialiser les statistiques
+function resetStats() {
+    $('#totalEmployees').text('--');
+    $('#availableEmployees').html('--');
+    $('#maleEmployees').text('--');
+    $('#femaleEmployees').text('--');
+}
 
-    // Fonction pour charger les statistiques
-    function loadStats() {
-        $.ajax({
-            url: '/api/stats',
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    const stats = response.stats;
-                    $('#totalEmployees').text(stats.total || 0);
-                    $('#availableEmployees').html(`
-                        Au siège: ${stats.siege || 0}<br>
-                        À l'intérieur: ${stats.interieur || 0}
-                    `);
-                    $('#maleEmployees').text(stats.male || 0);
-                    $('#femaleEmployees').text(stats.female || 0);
-                }
-            },
-            error: function(xhr) {
-                console.error('Erreur lors du chargement des statistiques:', xhr);
+// Fonction pour charger les statistiques
+function loadStats() {
+    // Afficher les loaders
+    $('.stats-loader').show();
+    $('.stats-value').text('--');
+    
+    $.ajax({
+        url: '/api/stats',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const stats = response.stats;
+                
+                // Mise à jour des statistiques
+                $('#totalEmployees').text(stats.total);
+                
+                // Mise à jour de la situation géographique
+                const availableHtml = `
+                    <div class="d-flex flex-column">
+                        <span class="badge badge-siege mb-1">Au siège: ${stats.siege}</span>
+                        <span class="badge badge-interieur">À l'intérieur: ${stats.interieur}</span>
+                    </div>
+                `;
+                $('#availableEmployees').html(availableHtml);
+                
+                // Mise à jour du nombre d'hommes et de femmes
+                $('#maleEmployees').text(stats.male);
+                $('#femaleEmployees').text(stats.female);
+                
+                // Animation des compteurs
+                $('.counter-value').each(function () {
+                    $(this).prop('Counter', 0).animate({
+                        Counter: $(this).text()
+                    }, {
+                        duration: 1000,
+                        easing: 'swing',
+                        step: function (now) {
+                            $(this).text(Math.ceil(now));
+                        }
+                    });
+                });
+            } else {
+                showToast('Erreur: ' + (response.error || 'Erreur de chargement des statistiques'), 'fas fa-times-circle');
             }
-        });
-    }
+        },
+        error: function(xhr) {
+            console.error('Erreur lors du chargement des statistiques:', xhr);
+            showToast('Erreur de connexion', 'fas fa-times-circle');
+        },
+        complete: function() {
+            $('.stats-loader').hide();
+        }
+    });
+}
 
-    // Initialisation de la table avec DataTables
+// Fonction pour initialiser la table
+function initializeEmployeesTable() {
     employeesTable = $('#employeesTable').DataTable({
         ajax: {
             url: '/api/employees',
@@ -62,11 +94,12 @@ $(document).ready(function() {
             { data: 'last_name' },
             { data: 'first_name' },
             { data: 'position' },
+            { data: 'contact' },
             { data: 'gender' },
             { 
                 data: 'availability',
                 render: function(data) {
-                    const badgeClass = data === 'Au siège' ? 'bg-success' : 'bg-primary';
+                    const badgeClass = data === 'Au siège' ? 'badge-siege' : 'badge-interieur';
                     return `<span class="badge ${badgeClass}">${data}</span>`;
                 }
             },
@@ -84,6 +117,7 @@ $(document).ready(function() {
                 }
             }
         ],
+        order: [[0, 'asc']],
         dom: 'Bfrtip',
         buttons: [
             {
@@ -91,7 +125,7 @@ $(document).ready(function() {
                 text: '<i class="fas fa-file-excel"></i> Excel',
                 className: 'btn btn-success',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5]
                 }
             },
             {
@@ -99,7 +133,7 @@ $(document).ready(function() {
                 text: '<i class="fas fa-file-pdf"></i> PDF',
                 className: 'btn btn-danger',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5]
                 }
             },
             {
@@ -107,7 +141,7 @@ $(document).ready(function() {
                 text: '<i class="fas fa-print"></i> Imprimer',
                 className: 'btn btn-info',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5]
                 }
             }
         ],
@@ -115,6 +149,17 @@ $(document).ready(function() {
             url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
         }
     });
+}
+
+// Initialisation au chargement de la page
+$(document).ready(function() {
+    let currentEmployeeId = null;
+
+    initializeEmployeesTable();
+    loadStats();
+    
+    // Actualisation automatique des statistiques
+    setInterval(loadStats, 30000);
 
     // Gestionnaire pour le bouton de modification
     $('#employeesTable').on('click', '.edit-btn', function() {
@@ -242,8 +287,4 @@ $(document).ready(function() {
         currentEmployeeId = null;
         $('.modal-title').html('<i class="fas fa-user-plus me-2"></i>Ajouter un Employé');
     });
-
-    // Initialisation
-    loadStats();
-    setInterval(loadStats, 60000);
 });

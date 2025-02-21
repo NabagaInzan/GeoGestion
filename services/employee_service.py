@@ -180,6 +180,7 @@ class EmployeeService:
 
     def get_employee_stats(self, operator_id):
         """Récupère les statistiques des employés"""
+        conn = None
         try:
             conn = self.get_db_connection()
             cursor = conn.cursor()
@@ -190,40 +191,34 @@ class EmployeeService:
                 FROM employees 
                 WHERE operator_id = ?
             """, (operator_id,))
-            total = cursor.fetchone()[0]
+            total = cursor.fetchone()[0] or 0
             
-            # Employés au siège
+            # Employés par disponibilité
             cursor.execute("""
-                SELECT COUNT(*) 
+                SELECT availability, COUNT(*) 
                 FROM employees 
-                WHERE operator_id = ? AND availability = 'Au siège'
+                WHERE operator_id = ? 
+                GROUP BY availability
             """, (operator_id,))
-            siege = cursor.fetchone()[0]
+            availability_counts = dict(cursor.fetchall())
+            siege = availability_counts.get('Au siège', 0)
+            interieur = availability_counts.get('À l\'intérieur', 0)
             
-            # Employés à l'intérieur
+            # Employés par genre
             cursor.execute("""
-                SELECT COUNT(*) 
+                SELECT gender, COUNT(*) 
                 FROM employees 
-                WHERE operator_id = ? AND availability = 'À l''intérieur'
+                WHERE operator_id = ? 
+                GROUP BY gender
             """, (operator_id,))
-            interieur = cursor.fetchone()[0]
-            
-            # Répartition par genre
-            cursor.execute("""
-                SELECT COUNT(*) 
-                FROM employees 
-                WHERE operator_id = ? AND gender = 'M'
-            """, (operator_id,))
-            male = cursor.fetchone()[0]
-            
-            cursor.execute("""
-                SELECT COUNT(*) 
-                FROM employees 
-                WHERE operator_id = ? AND gender = 'F'
-            """, (operator_id,))
-            female = cursor.fetchone()[0]
-            
-            conn.close()
+            gender_results = cursor.fetchall()
+            male = 0
+            female = 0
+            for gender, count in gender_results:
+                if gender in ['M', 'Homme', 'H']:
+                    male += count
+                elif gender in ['F', 'Femme']:
+                    female += count
             
             return {
                 'success': True,
@@ -241,3 +236,6 @@ class EmployeeService:
                 'success': False,
                 'error': str(e)
             }
+        finally:
+            if conn:
+                conn.close()
