@@ -154,6 +154,11 @@ def get_stats():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/health')
+def health_check():
+    """Route de vérification de santé pour Render"""
+    return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+
 @app.route('/logout')
 def logout():
     """Déconnexion de l'opérateur"""
