@@ -1,3 +1,11 @@
+// Gestionnaire d'erreur global pour les requêtes AJAX
+$(document).ajaxError(function(event, jqXHR, settings, error) {
+    if (jqXHR.status === 401) {
+        // Redirection vers la page de connexion
+        window.location.href = '/';
+    }
+});
+
 $(document).ready(function() {
     // Initialisation des variables
     let employeesTable;

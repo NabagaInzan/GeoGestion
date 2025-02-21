@@ -5,16 +5,25 @@ from auth.sqlite_auth import SQLiteAuth
 from services.employee_service import EmployeeService
 from datetime import datetime
 import uuid
+from functools import wraps
 
 # Charger les variables d'environnement
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Clé secrète pour la session
+app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # Clé secrète pour la session
 
 # Initialiser les services
 auth = SQLiteAuth()
 employee_service = EmployeeService()
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'operator_id' not in session:
+            return jsonify({"success": False, "error": "Non autorisé"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def index():
@@ -72,11 +81,9 @@ def dashboard():
     return render_template('dashboard.html', operator_name=session.get('operator_name'))
 
 @app.route('/api/employees', methods=['GET'])
+@login_required
 def get_employees():
     """Récupère la liste des employés de l'opérateur connecté"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         employees = employee_service.get_employees_by_operator(session['operator_id'])
         return jsonify(employees)
@@ -84,11 +91,9 @@ def get_employees():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees/<employee_id>', methods=['GET'])
+@login_required
 def get_employee(employee_id):
     """Récupère les détails d'un employé"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         employee = employee_service.get_employee_by_id(employee_id, session['operator_id'])
         if employee:
@@ -98,11 +103,9 @@ def get_employee(employee_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees', methods=['POST'])
+@login_required
 def add_employee():
     """Ajoute un nouvel employé"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         data = request.get_json()
         data['operator_id'] = session['operator_id']
@@ -114,11 +117,9 @@ def add_employee():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees/<employee_id>', methods=['PUT'])
+@login_required
 def update_employee(employee_id):
     """Met à jour un employé existant"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         data = request.get_json()
         data['operator_id'] = session['operator_id']
@@ -130,11 +131,9 @@ def update_employee(employee_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees/<employee_id>', methods=['DELETE'])
+@login_required
 def delete_employee(employee_id):
     """Supprime un employé"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         if employee_service.delete_employee(employee_id, session['operator_id']):
             return jsonify({"success": True, "message": "Employé supprimé avec succès"})
@@ -143,11 +142,9 @@ def delete_employee(employee_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/stats', methods=['GET'])
+@login_required
 def get_stats():
     """Récupère les statistiques des employés pour l'opérateur connecté"""
-    if 'operator_id' not in session:
-        return jsonify({"success": False, "error": "Non autorisé"}), 401
-    
     try:
         stats = employee_service.get_employee_stats(session['operator_id'])
         return jsonify({"success": True, "stats": stats})
