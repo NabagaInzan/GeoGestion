@@ -315,7 +315,7 @@ $(document).ready(function() {
             headerOffset: $('.navbar').height()
         },
         ajax: {
-            url: '/api/employees',
+            url: config.apiBaseUrl + '/api/employees',
             dataSrc: ''
         },
         columns: [
@@ -345,8 +345,10 @@ $(document).ready(function() {
 
     // Charger les statistiques
     function loadStats() {
-        $.get('/api/stats')
-            .done(function(response) {
+        $.ajax({
+            url: config.apiBaseUrl + '/api/stats',
+            method: 'GET',
+            success: function(response) {
                 if (response.success) {
                     const stats = response.stats;
                     
@@ -370,15 +372,16 @@ $(document).ready(function() {
                     }
                     $('.availability-stats').text(availableEmployees);
                 }
-            })
-            .fail(function(xhr) {
-                console.error('Erreur lors du chargement des statistiques:', xhr.responseText);
-                // Afficher des valeurs par défaut en cas d'erreur
-                $('.total-employees').text('0');
-                $('.gender-stats').text('0/0');
-                $('.contract-stats').text('0');
-                $('.availability-stats').text('0');
-            });
+            }
+        })
+        .fail(function(xhr) {
+            console.error('Erreur lors du chargement des statistiques:', xhr.responseText);
+            // Afficher des valeurs par défaut en cas d'erreur
+            $('.total-employees').text('0');
+            $('.gender-stats').text('0/0');
+            $('.contract-stats').text('0');
+            $('.availability-stats').text('0');
+        });
     }
 
     // Charger les statistiques au démarrage
@@ -450,14 +453,13 @@ $(document).ready(function() {
     $('#employeesTable').on('click', '.delete-btn', function() {
         const employeeId = $(this).data('id');
         
-        // Confirmation de suppression avec Bootstrap modal
         if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
             // Afficher le loader
             $('.loader').show();
             
             // Envoyer la requête de suppression
             $.ajax({
-                url: `/api/employees/${employeeId}`,
+                url: config.apiBaseUrl + `/api/employees/${employeeId}`,
                 method: 'DELETE',
                 success: function(response) {
                     if (response.success) {
@@ -481,29 +483,14 @@ $(document).ready(function() {
     // Gestionnaire de soumission du formulaire
     $('#addEmployeeForm').on('submit', function(e) {
         e.preventDefault();
-        
-        // Afficher le loader
-        $('.loader').show();
-        
-        // Récupérer les données du formulaire
         const formData = new FormData(this);
-        const jsonData = {};
         
-        // Convertir FormData en objet JSON
-        formData.forEach((value, key) => {
-            jsonData[key] = value;
-        });
-        
-        // Déterminer l'URL et la méthode en fonction de l'action (ajout ou modification)
-        const url = currentEmployeeId ? `/api/employees/${currentEmployeeId}` : '/api/employees';
-        const method = currentEmployeeId ? 'PUT' : 'POST';
-        
-        // Envoyer la requête
         $.ajax({
-            url: url,
-            method: method,
-            data: JSON.stringify(jsonData),
-            contentType: 'application/json',
+            url: config.apiBaseUrl + '/api/employees',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 if (response.success) {
                     // Fermer le modal
@@ -517,7 +504,7 @@ $(document).ready(function() {
                     currentEmployeeId = null;
                     
                     // Afficher le message de succès
-                    showToast('Employé ' + (method === 'PUT' ? 'modifié' : 'ajouté') + ' avec succès', 'fas fa-check-circle');
+                    showToast('Employé ajouté avec succès', 'fas fa-check-circle');
                 } else {
                     showToast('Erreur lors de l\'opération', 'fas fa-times-circle');
                 }
