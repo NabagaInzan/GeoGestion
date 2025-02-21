@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGestion AFOR - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --afor-green: #059669;
+            --afor-green-hover: #047857;
+            --afor-light-green: #34D399;
+            --border-color: rgba(229, 231, 235, 0.4);
+            --error-color: #EF4444;
+            --success-color: #10B981;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-color: #1F2937;
+            --text-muted: #6B7280;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --bg-overlay: linear-gradient(
+                135deg, 
+                rgba(255, 255, 255, 0.8) 0%,
+                rgba(255, 255, 255, 0.6) 50%,
+                rgba(255, 255, 255, 0.8) 100%
+            );
+        }
+
+        :root[data-theme="dark"] {
+            --afor-green: #10B981;
+            --afor-green-hover: #059669;
+            --afor-light-green: #34D399;
+            --border-color: rgba(156, 163, 175, 0.3);
+            --error-color: #EF4444;
+            --success-color: #10B981;
+            --card-bg: rgba(17, 24, 39, 0.95);
+            --text-color: #F9FAFB;
+            --text-muted: #D1D5DB;
+            --input-bg: rgba(31, 41, 55, 0.9);
+            --table-stripe: rgba(31, 41, 55, 0.7);
+            --bg-overlay: linear-gradient(
+                135deg, 
+                rgba(17, 24, 39, 0.9) 0%,
+                rgba(31, 41, 55, 0.8) 50%,
+                rgba(17, 24, 39, 0.9) 100%
+            );
+        }
+
+        body {
+            background: url('/static/operateur.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-color);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .animated-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+
+        .loader {
+            width: 100%;
+            height: 4px;
+            background-color: var(--afor-light-green);
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+            z-index: 1060;
+        }
+
+        .loader.loading {
+            animation: loading 2s infinite ease-in-out;
+        }
+
+        @keyframes loading {
+            0% { transform: scaleX(0); }
+            50% { transform: scaleX(0.7); }
+            100% { transform: scaleX(0); }
+        }
+
+        .navbar {
+            background-color: var(--card-bg) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            color: var(--text-color) !important;
+            font-weight: 600;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .stats-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .stats-card:hover {
+            animation: pulse 1s infinite;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--afor-green);
+        }
+
+        .stats-card h3 {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .stats-card p {
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .table-container h2 {
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .dataTables_wrapper {
+            padding: 20px;
+            border-radius: 12px;
+            color: var(--text-color);
+        }
+
+        .table {
+            color: var(--text-color) !important;
+        }
+
+        .table thead th {
+            background-color: var(--afor-green);
+            color: white;
+            border-bottom: none;
+            padding: 12px;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(5, 150, 105, 0.05);
+        }
+
+        :root[data-theme="dark"] .table {
+            color: var(--text-color) !important;
+            border-color: var(--border-color);
+        }
+
+        :root[data-theme="dark"] .table thead th {
+            background-color: var(--afor-green);
+            color: white;
+            font-weight: 600;
+        }
+
+        :root[data-theme="dark"] .table tbody tr {
+            border-color: var(--border-color);
+        }
+
+        :root[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--table-stripe);
+        }
+
+        :root[data-theme="dark"] .dataTables_info,
+        :root[data-theme="dark"] .dataTables_length,
+        :root[data-theme="dark"] .dataTables_filter {
+            color: var(--text-color) !important;
+        }
+
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            transform: translateX(5px);
+            background-color: rgba(5, 150, 105, 0.1) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--afor-green);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--afor-green-hover);
+        }
+
+        .btn-outline-light {
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        .btn-outline-light:hover {
+            background-color: var(--afor-green);
+            border-color: var(--afor-green);
+            color: white;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 8px;
+            padding: 10px 15px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--input-bg);
+            border-color: var(--afor-green);
+            color: var(--text-color);
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        .form-label {
+            color: var(--text-color);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #DC2626;
+        }
+
+        .btn-info {
+            background-color: var(--afor-light-green);
+            border: none;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #2DD4BF;
+            color: white;
+        }
+
+        .dataTables_filter input {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            color: var(--text-color) !important;
+        }
+
+        .dataTables_filter input:focus {
+            border-color: var(--afor-green) !important;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1) !important;
+        }
+
+        .dataTables_length select {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            color: var(--text-color) !important;
+        }
+
+        .dataTables_info {
+            color: var(--text-muted) !important;
+        }
+
+        .page-link {
+            color: var(--afor-green);
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+        }
+
+        .page-link:hover {
+            color: var(--afor-green-hover);
+            background-color: rgba(5, 150, 105, 0.1);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--afor-green);
+            border-color: var(--afor-green);
+        }
+
+        .theme-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            margin: 0 15px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--text-muted);
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--afor-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .theme-icon {
+            color: var(--text-color);
+            margin: 0 5px;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .custom-toast {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .custom-toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .time-indicator {
+            padding: 8px 15px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            margin-right: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: var(--afor-green);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .stats-card {
+                margin-bottom: 15px;
+            }
+            
+            .table-container {
+                padding: 10px;
+                overflow-x: auto;
+            }
+            
+            .dataTables_wrapper {
+                padding: 10px;
+            }
+
+            .table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .navbar-brand img {
+                height: 30px;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-background"></div>
+    <div class="overlay"></div>
+    <div class="loader"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Help Button -->
+    <div class="help-button" onclick="showHelp()">
+        <i class="fas fa-question"></i>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="/static/images/afor-logo.jpeg" alt="AFOR Logo" id="brandLogo">
+                <span id="brandText">GeoGestion AFOR</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <div class="time-indicator me-3">
+                    <i class="fas fa-clock"></i>
+                    <span id="currentTime"></span>
+                </div>
+                <i class="fas fa-sun theme-icon"></i>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeSwitch">
+                    <span class="slider"></span>
+                </label>
+                <i class="fas fa-moon theme-icon"></i>
+                <span class="me-3 operator-badge">
+                    <i class="fas fa-user"></i>
+                    <span class="operator-name light-theme">{{ operator_name }}</span>
+                    <span class="operator-name dark-theme" style="display: none;">{{ operator_name }} 🌙</span>
+                </span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Déconnexion
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Stats Row -->
+        <div class="row">
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <i class="fas fa-users stats-icon"></i>
+                    <h3 class="total-employees">0</h3>
+                    <p>Total Employés</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <i class="fas fa-venus-mars stats-icon"></i>
+                    <h3 class="gender-stats">0/0</h3>
+                    <p>Hommes/Femmes</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <i class="fas fa-business-time stats-icon"></i>
+                    <h3 class="contract-stats">0</h3>
+                    <p>Contrats Actifs</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <i class="fas fa-check-circle stats-icon"></i>
+                    <h3 class="availability-stats">0</h3>
+                    <p>Disponibles</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-list"></i> Liste des Employés</h2>
+                <button class="btn btn-primary" id="addEmployeeBtn" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                    <i class="fas fa-plus"></i> Nouvel Employé
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="employeesTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Position</th>
+                            <th>Contact</th>
+                            <th>Genre</th>
+                            <th>Disponibilité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Employé -->
+    <div class="modal fade" id="addEmployeeModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content employee-form-modal">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Ajouter un Employé
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addEmployeeForm" class="employee-form">
+                        <div class="row g-4">
+                            <!-- Première ligne -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="firstName" name="first_name" required>
+                                    <label for="firstName">Prénom</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="lastName" name="last_name" required>
+                                    <label for="lastName">Nom</label>
+                                </div>
+                            </div>
+                            
+                            <!-- Deuxième ligne -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="position" name="position" required>
+                                    <label for="position">Position</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="tel" class="form-control" id="contact" name="contact" 
+                                           pattern="[0-9]{8,}" title="Numéro de téléphone valide" required>
+                                    <label for="contact">Contact</label>
+                                </div>
+                            </div>
+
+                            <!-- Troisième ligne -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Sélectionnez...</option>
+                                        <option value="Homme">Homme</option>
+                                        <option value="Femme">Femme</option>
+                                    </select>
+                                    <label for="gender">Genre</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="contractDuration" 
+                                           name="contract_duration" min="1" max="60" required>
+                                    <label for="contractDuration">Durée du Contrat (en mois)</label>
+                                    <div class="contract-helper">
+                                        <span class="badge bg-info contract-duration-text"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quatrième ligne -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="birthDate" name="birth_date" required>
+                                    <label for="birthDate">Date de Naissance</label>
+                                    <div class="age-helper">
+                                        <span class="badge bg-info age-text"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="availability" name="availability" required>
+                                        <option value="">Sélectionnez...</option>
+                                        <option value="Disponible">Disponible</option>
+                                        <option value="Non Disponible">Non Disponible</option>
+                                    </select>
+                                    <label for="availability">Disponibilité</label>
+                                </div>
+                            </div>
+
+                            <!-- Cinquième ligne -->
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <textarea class="form-control" id="additionalInfo" name="additional_info" 
+                                              style="height: 100px"></textarea>
+                                    <label for="additionalInfo">Informations Additionnelles</label>
+                                    <div class="char-counter text-muted">
+                                        <small>0/500 caractères</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <button type="submit" form="addEmployeeForm" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Ajouter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Gestionnaire du thème
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeSwitch = document.getElementById('themeSwitch');
+            const lightThemeName = document.querySelector('.operator-name.light-theme');
+            const darkThemeName = document.querySelector('.operator-name.dark-theme');
+            
+            // Charger le thème sauvegardé
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                themeSwitch.checked = savedTheme === 'dark';
+                updateOperatorNameDisplay(savedTheme === 'dark');
+            }
+            
+            // Gestionnaire du changement de thème
+            themeSwitch.addEventListener('change', function(e) {
+                const isDark = e.target.checked;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                showToast(isDark ? 'Mode sombre activé' : 'Mode clair activé', isDark ? 'fas fa-moon' : 'fas fa-sun');
+                updateOperatorNameDisplay(isDark);
+            });
+
+            function updateOperatorNameDisplay(isDark) {
+                lightThemeName.style.display = isDark ? 'none' : 'inline';
+                darkThemeName.style.display = isDark ? 'inline' : 'none';
+            }
+
+            // Mise à jour de l'heure
+            function updateTime() {
+                const now = new Date();
+                const options = { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: false 
+                };
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString('fr-FR', options);
+            }
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // Suppression de updateWeather qui n'est plus utilisée
+            // updateWeather();
+            // setInterval(updateWeather, 300000);
+
+            // Gestionnaire de la durée du contrat
+            const contractDuration = document.getElementById('contractDuration');
+            const contractHelper = document.querySelector('.contract-duration-text');
+            
+            contractDuration.addEventListener('input', function() {
+                const months = parseInt(this.value) || 0;
+                const years = Math.floor(months / 12);
+                const remainingMonths = months % 12;
+                let durationText = '';
+                
+                if (years > 0) {
+                    durationText += `${years} an${years > 1 ? 's' : ''}`;
+                }
+                if (remainingMonths > 0) {
+                    if (durationText) durationText += ' et ';
+                    durationText += `${remainingMonths} mois`;
+                }
+                
+                contractHelper.textContent = durationText || 'Durée invalide';
+            });
+
+            // Calcul automatique de l'âge
+            const birthDate = document.getElementById('birthDate');
+            const ageHelper = document.querySelector('.age-text');
+            
+            birthDate.addEventListener('change', function() {
+                const birth = new Date(this.value);
+                const today = new Date();
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+                
+                ageHelper.textContent = `${age} ans`;
+            });
+
+            // Compteur de caractères pour les informations additionnelles
+            const additionalInfo = document.getElementById('additionalInfo');
+            const charCounter = document.querySelector('.char-counter small');
+            
+            additionalInfo.addEventListener('input', function() {
+                const count = this.value.length;
+                charCounter.textContent = `${count}/500 caractères`;
+                if (count > 450) {
+                    charCounter.classList.add('text-warning');
+                } else {
+                    charCounter.classList.remove('text-warning');
+                }
+            });
+
+            // Fonction d'aide améliorée
+            function showHelp() {
+                const modal = new bootstrap.Modal(document.createElement('div'));
+                modal.element.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-question-circle me-2"></i>
+                                    Guide d'utilisation
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="help-section">
+                                            <h6><i class="fas fa-user-plus text-primary"></i> Gestion des Employés</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-check text-success"></i> Ajoutez un nouvel employé avec le bouton "Nouvel Employé"</li>
+                                                <li><i class="fas fa-edit text-warning"></i> Modifiez les informations en cliquant sur l'icône d'édition</li>
+                                                <li><i class="fas fa-trash text-danger"></i> Supprimez un employé avec l'icône de suppression</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="help-section">
+                                            <h6><i class="fas fa-table text-primary"></i> Utilisation du Tableau</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-search"></i> Utilisez la barre de recherche pour filtrer</li>
+                                                <li><i class="fas fa-sort"></i> Triez les colonnes en cliquant sur leurs en-têtes</li>
+                                                <li><i class="fas fa-filter"></i> Filtrez par disponibilité ou position</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <div class="help-section">
+                                            <h6><i class="fas fa-palette text-primary"></i> Personnalisation</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-moon"></i> Basculez entre les modes clair et sombre</li>
+                                                <li><i class="fas fa-columns"></i> Ajustez le nombre d'éléments affichés</li>
+                                                <li><i class="fas fa-sync"></i> Les données se rafraîchissent automatiquement</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="help-section">
+                                            <h6><i class="fas fa-chart-pie text-primary"></i> Statistiques</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-users"></i> Visualisez le nombre total d'employés</li>
+                                                <li><i class="fas fa-venus-mars"></i> Répartition par genre</li>
+                                                <li><i class="fas fa-briefcase"></i> Statuts des contrats</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-light rounded">
+                                    <h6><i class="fas fa-lightbulb text-warning"></i> Astuces</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-star text-warning"></i> Survolez les cartes pour voir les animations</li>
+                                        <li><i class="fas fa-keyboard text-info"></i> Utilisez Ctrl+F pour une recherche rapide</li>
+                                        <li><i class="fas fa-bell text-danger"></i> Les notifications apparaissent en bas à droite</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                modal.element.className = 'modal fade';
+                document.body.appendChild(modal.element);
+                modal.show();
+            }
+
+            // Attacher la fonction d'aide au bouton
+            document.querySelector('.help-button').addEventListener('click', showHelp);
+
+            // Loader pour les actions AJAX
+            $(document).ajaxStart(function() {
+                $('.loader').addClass('loading');
+            }).ajaxStop(function() {
+                $('.loader').removeClass('loading');
+            });
+        });
+
+        // Fonction pour afficher les toasts
+        function showToast(message, icon) {
+            const toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            toast.innerHTML = `
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            `;
+            document.querySelector('.toast-container').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Fonction d'aide
+        function showHelp() {
+            const helpContent = `
+                <h5>Aide Rapide</h5>
+                <ul>
+                    <li>👆 Cliquez sur les cartes de statistiques pour les voir s'animer</li>
+                    <li>🌓 Utilisez le switch pour changer de thème</li>
+                    <li>📱 L'interface s'adapte à tous les écrans</li>
+                    <li>🔍 Utilisez la recherche pour filtrer les employés</li>
+                    <li>✨ Survolez les lignes du tableau pour un effet de glissement</li>
+                </ul>
+            `;
+            
+            const modal = new bootstrap.Modal(document.createElement('div'));
+            modal.element.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Guide d'utilisation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${helpContent}
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.element.className = 'modal fade';
+            document.body.appendChild(modal.element);
+            modal.show();
+        }
+
+        // Amélioration des notifications pour les actions CRUD
+        function showActionNotification(action, success) {
+            let message, icon;
+            switch(action) {
+                case 'add':
+                    message = success ? 'Employé ajouté avec succès' : 'Erreur lors de l\'ajout';
+                    icon = success ? 'fas fa-check-circle' : 'fas fa-times-circle';
+                    break;
+                case 'edit':
+                    message = success ? 'Employé modifié avec succès' : 'Erreur lors de la modification';
+                    icon = success ? 'fas fa-check-circle' : 'fas fa-times-circle';
+                    break;
+                case 'delete':
+                    message = success ? 'Employé supprimé avec succès' : 'Erreur lors de la suppression';
+                    icon = success ? 'fas fa-trash-alt' : 'fas fa-times-circle';
+                    break;
+            }
+            showToast(message, icon);
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

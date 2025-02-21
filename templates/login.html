@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGestion - AFOR</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --bg-opacity: 0.85;
+            --bg-overlay: rgba(255, 255, 255, var(--bg-opacity));
+        }
+
+        [data-theme="light"] {
+            --bg-overlay: rgba(255, 255, 255, var(--bg-opacity));
+        }
+
+        [data-theme="dark"] {
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --text-color: #ffffff;
+            --text-muted: #9CA3AF;
+            --border-color: rgba(75, 85, 99, 0.4);
+            --input-bg: rgba(31, 41, 55, 0.9);
+            --bg-overlay: rgba(17, 24, 39, var(--bg-opacity));
+        }
+        
+        [data-theme="custom"] {
+            --card-bg: var(--custom-bg, rgba(255, 255, 255, 0.85));
+            --text-color: var(--custom-text, #1F2937);
+            --text-muted: var(--custom-muted, #6B7280);
+            --border-color: var(--custom-border, rgba(229, 231, 235, 0.4));
+            --input-bg: var(--custom-input, rgba(255, 255, 255, 0.9));
+            --bg-overlay: var(--custom-overlay, rgba(255, 255, 255, var(--bg-opacity)));
+        }
+
+        .background-overlay {
+            background: var(--bg-overlay) !important;
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Style pour le combobox */
+        .form-select {
+            background-color: #2c3e50 !important;
+            color: #ecf0f1 !important;
+            border-color: #34495e !important;
+        }
+
+        .form-select option {
+            background-color: #2c3e50 !important;
+            color: #ecf0f1 !important;
+        }
+
+        .form-select:focus {
+            border-color: #3498db !important;
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25) !important;
+        }
+
+        /* Style pour le texte du label */
+        .form-label {
+            color: #ecf0f1 !important;
+        }
+
+        /* Style pour le conteneur du mot de passe */
+        .password-container {
+            position: relative;
+            width: 100%;
+        }
+
+        /* Style pour l'icône de l'œil */
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #ecf0f1;
+            z-index: 10;
+        }
+
+        .toggle-password:hover {
+            color: #3498db;
+        }
+
+        /* Ajuster la largeur du champ mot de passe pour l'icône */
+        .password-container input[type="password"],
+        .password-container input[type="text"] {
+            padding-right: 35px;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-selector">
+        <button class="theme-btn" data-theme="light" title="Mode clair">☀️</button>
+        <button class="theme-btn" data-theme="dark" title="Mode sombre">🌙</button>
+        <button class="theme-btn custom-theme" title="Personnaliser">🎨</button>
+    </div>
+
+    <div class="custom-theme-modal" id="customThemeModal">
+        <div class="modal-content">
+            <h3>Personnaliser le thème</h3>
+            <div class="color-picker">
+                <label>
+                    Couleur de fond
+                    <input type="color" id="bgColor" value="#ffffff">
+                    <input type="range" id="bgOpacity" min="0" max="100" value="85">
+                </label>
+                <label>
+                    Couleur du texte
+                    <input type="color" id="textColor" value="#1F2937">
+                </label>
+                <label>
+                    Couleur secondaire
+                    <input type="color" id="mutedColor" value="#6B7280">
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" id="applyTheme">Appliquer</button>
+                <button class="btn-secondary" id="closeModal">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-container"></div>
+    <div class="background-overlay"></div>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <div class="login-header">
+                    <img src="{{ url_for('static', filename='images/afor-logo.jpeg') }}" alt="AFOR Logo" class="img-fluid">
+                    <h2>GeoGestion</h2>
+                    <p class="text-muted">Système de gestion géographique</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" id="loginForm" novalidate>
+                    <div class="form-group" style="animation-delay: 0.1s;">
+                        <label for="operator" class="form-label">Opérateur</label>
+                        <select class="form-select" id="operator" name="operator" required aria-label="Sélectionner un opérateur">
+                            <option value="">Sélectionner un opérateur</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="animation-delay: 0.2s;">
+                        <div class="password-field">
+                            <label for="contact" class="form-label">Contact</label>
+                            <div class="admin-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="adminSwitch">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Mode Admin</span>
+                            </div>
+                            <input type="text" class="form-control" id="contact" name="contact" required readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="animation-delay: 0.3s;">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        <div class="password-container">
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="animation-delay: 0.4s;">
+                        <span class="btn-text">Se connecter</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script>
+        // Fonction pour basculer la visibilité du mot de passe
+        function setupPasswordToggle() {
+            const togglePassword = document.getElementById('togglePassword');
+            const password = document.getElementById('password');
+            
+            if (togglePassword && password) {
+                togglePassword.addEventListener('click', function () {
+                    // Basculer le type du champ
+                    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                    password.setAttribute('type', type);
+                    
+                    // Basculer l'icône
+                    this.classList.toggle('fa-eye');
+                    this.classList.toggle('fa-eye-slash');
+                });
+            }
+        }
+
+        // Fonction pour charger les opérateurs depuis SQLite
+        function loadOperators() {
+            fetch('/api/operators')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('operator');
+                        // Garder l'option par défaut
+                        select.innerHTML = '<option value="">Sélectionner un opérateur</option>';
+                        
+                        // Ajouter les opérateurs
+                        data.operators.forEach(operator => {
+                            const option = document.createElement('option');
+                            option.value = operator.id;
+                            option.textContent = operator.name;
+                            option.dataset.password = 'AFOR'; // Stocker le mot de passe dans un attribut data
+                            select.appendChild(option);
+                        });
+
+                        // Ajouter l'écouteur d'événement pour le changement d'opérateur
+                        select.addEventListener('change', function(e) {
+                            const selectedOption = this.options[this.selectedIndex];
+                            if (selectedOption.value) {
+                                document.getElementById('password').value = selectedOption.dataset.password;
+                            } else {
+                                document.getElementById('password').value = '';
+                            }
+                        });
+                    } else {
+                        showError("Erreur lors du chargement des opérateurs");
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showError("Erreur lors du chargement des opérateurs");
+                });
+        }
+
+        // Fonction pour gérer la connexion
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const operator_id = document.getElementById('operator').value;
+            const password = document.getElementById('password').value;
+
+            if (!operator_id || !password) {
+                showError("Veuillez remplir tous les champs");
+                return;
+            }
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    operator_id: operator_id,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    showError(data.error || "Erreur de connexion");
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showError("Erreur lors de la connexion");
+            });
+        }
+
+        // Charger les opérateurs au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOperators();
+            setupPasswordToggle();
+            
+            // Ajouter l'écouteur d'événement pour le formulaire
+            const form = document.getElementById('loginForm');
+            if (form) {
+                form.addEventListener('submit', handleLogin);
+            }
+        });
+
+        // Fonction pour afficher les erreurs
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
