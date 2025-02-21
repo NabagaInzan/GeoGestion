@@ -644,6 +644,29 @@
         select option {
             color: black !important;
         }
+
+        /* Styles pour le tableau des employés */
+        #employeesTable {
+            font-family: 'Poppins', sans-serif !important;
+        }
+        
+        #employeesTable th, 
+        #employeesTable td {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
+        .dataTables_wrapper .dataTables_paginate {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        /* Style pour les boutons d'export */
+        div.dt-buttons .btn {
+            font-family: 'Poppins', sans-serif !important;
+        }
     </style>
 </head>
 <body>
@@ -887,14 +910,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="date" class="form-control" id="contract_start" name="contract_start" required>
-                                    <label for="contract_start">Début du contrat</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="date" class="form-control" id="contract_end" name="contract_end" required>
-                                    <label for="contract_end">Fin du contrat</label>
+                                    <input type="number" class="form-control" id="contract_duration" name="contract_duration" min="1" required>
+                                    <label for="contract_duration">Durée du contrat (en mois)</label>
                                     <small class="text-muted" id="contract-duration-display"></small>
                                 </div>
                             </div>
@@ -964,7 +981,7 @@
             // setInterval(updateWeather, 300000);
 
             // Gestionnaire de la durée du contrat
-            const contractDuration = document.getElementById('contractDuration');
+            const contractDuration = document.getElementById('contract_duration');
             const contractHelper = document.querySelector('.contract-duration-text');
             
             contractDuration.addEventListener('input', function() {

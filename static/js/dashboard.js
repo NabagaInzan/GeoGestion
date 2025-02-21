@@ -184,6 +184,25 @@ function calculateContractDuration(startDate, endDate) {
     };
 }
 
+// Fonction pour convertir les mois en années et mois
+function convertMonthsToYearsAndMonths(totalMonths) {
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    let durationText = '';
+    
+    if (years > 0) {
+        durationText += `${years} an${years > 1 ? 's' : ''}`;
+    }
+    if (months > 0) {
+        if (durationText) durationText += ' et ';
+        durationText += `${months} mois`;
+    }
+    if (!durationText) {
+        durationText = `${totalMonths} mois`;
+    }
+    return durationText;
+}
+
 // Initialisation au chargement de la page
 $(document).ready(function() {
     let currentEmployeeId = null;
@@ -344,6 +363,17 @@ $(document).ready(function() {
             }
             
             $('#contract-duration-display').text(`Durée: ${durationText}`);
+        }
+    });
+
+    // Gestionnaire d'événements pour la durée du contrat
+    $('#contract_duration').on('input', function() {
+        const months = parseInt(this.value) || 0;
+        if (months > 0) {
+            const durationText = convertMonthsToYearsAndMonths(months);
+            $('#contract-duration-display').text(`Équivaut à: ${durationText}`);
+        } else {
+            $('#contract-duration-display').text('');
         }
     });
 });
