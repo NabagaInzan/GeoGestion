@@ -100,11 +100,12 @@ def get_employees():
 def get_employee(employee_id):
     """Récupère les détails d'un employé"""
     try:
-        employee = employee_service.get_employee_by_id(employee_id, session['operator_id'])
+        employee = employee_service.get_employee_by_id(employee_id)
         if employee:
-            return jsonify({"success": True, "employee": employee})
+            return jsonify(employee)
         return jsonify({"success": False, "error": "Employé non trouvé"}), 404
     except Exception as e:
+        print(f"Erreur lors de la récupération de l'employé: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees', methods=['POST'])
@@ -142,15 +143,28 @@ def add_employee():
 @app.route('/api/employees/<employee_id>', methods=['PUT'])
 @login_required
 def update_employee(employee_id):
-    """Met à jour un employé existant"""
+    """Met à jour un employé"""
     try:
         data = request.get_json()
-        data['operator_id'] = session['operator_id']
+        if not data:
+            return jsonify({"success": False, "error": "Données invalides"}), 400
+
+        # Validation des données requises
+        required_fields = ['first_name', 'last_name', 'position', 'gender', 'availability']
+        missing_fields = [field for field in required_fields if not data.get(field)]
         
+        if missing_fields:
+            return jsonify({
+                "success": False,
+                "error": f"Champs requis manquants: {', '.join(missing_fields)}"
+            }), 400
+
+        # Mise à jour de l'employé
         if employee_service.update_employee(employee_id, data):
-            return jsonify({"success": True, "message": "Employé mis à jour avec succès"})
-        return jsonify({"success": False, "error": "Employé non trouvé ou non autorisé"}), 404
+            return jsonify({"success": True, "message": "Employé modifié avec succès"})
+        return jsonify({"success": False, "error": "Employé non trouvé"}), 404
     except Exception as e:
+        print(f"Erreur lors de la modification de l'employé: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees/<employee_id>', methods=['DELETE'])
@@ -158,10 +172,11 @@ def update_employee(employee_id):
 def delete_employee(employee_id):
     """Supprime un employé"""
     try:
-        if employee_service.delete_employee(employee_id, session['operator_id']):
+        if employee_service.delete_employee(employee_id):
             return jsonify({"success": True, "message": "Employé supprimé avec succès"})
-        return jsonify({"success": False, "error": "Employé non trouvé ou non autorisé"}), 404
+        return jsonify({"success": False, "error": "Employé non trouvé"}), 404
     except Exception as e:
+        print(f"Erreur lors de la suppression de l'employé: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/stats', methods=['GET'])

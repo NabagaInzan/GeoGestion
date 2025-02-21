@@ -37,22 +37,37 @@ class EmployeeService:
         finally:
             conn.close()
 
-    def get_employee_by_id(self, employee_id, operator_id):
-        conn = self.get_db_connection()
+    def get_employee_by_id(self, employee_id):
+        """Récupère un employé par son ID"""
         try:
+            conn = self.get_db_connection()
             cursor = conn.cursor()
-            query = """
-                SELECT id, first_name, last_name, position, contact, gender,
-                       contract_duration, birth_date, availability, additional_info,
-                       created_at, updated_at
-                FROM employees
-                WHERE id = ? AND operator_id = ?
-            """
-            cursor.execute(query, (employee_id, operator_id))
+            cursor.execute("""
+                SELECT id, first_name, last_name, position, gender, contact, 
+                       birth_date, contract_duration, availability, additional_info
+                FROM employees 
+                WHERE id = ?
+            """, (employee_id,))
             employee = cursor.fetchone()
-            return dict(employee) if employee else None
-        finally:
             conn.close()
+            
+            if employee:
+                return {
+                    'id': employee[0],
+                    'first_name': employee[1],
+                    'last_name': employee[2],
+                    'position': employee[3],
+                    'gender': employee[4],
+                    'contact': employee[5],
+                    'birth_date': employee[6],
+                    'contract_duration': employee[7],
+                    'availability': employee[8],
+                    'additional_info': employee[9]
+                }
+            return None
+        except Exception as e:
+            print(f"Erreur dans get_employee_by_id: {str(e)}")
+            raise e
 
     def add_employee(self, data):
         conn = self.get_db_connection()
@@ -98,132 +113,131 @@ class EmployeeService:
             conn.close()
 
     def update_employee(self, employee_id, data):
-        conn = self.get_db_connection()
+        """Met à jour un employé"""
         try:
+            conn = self.get_db_connection()
             cursor = conn.cursor()
-            now = datetime.now().isoformat()
             
-            # Formatage des noms
-            first_name = self.format_first_name(data.get('first_name', ''))
-            last_name = self.format_name(data.get('last_name', ''))
-            
-            # Vérifier que l'employé appartient à l'opérateur
-            cursor.execute(
-                "SELECT id FROM employees WHERE id = ? AND operator_id = ?",
-                (employee_id, data.get('operator_id'))
-            )
+            # Vérifier si l'employé existe
+            cursor.execute("SELECT id FROM employees WHERE id = ?", (employee_id,))
             if not cursor.fetchone():
+                conn.close()
                 return False
-            
-            query = """
-                UPDATE employees SET
-                    first_name = ?,
+                
+            # Mettre à jour l'employé
+            cursor.execute("""
+                UPDATE employees 
+                SET first_name = ?,
                     last_name = ?,
                     position = ?,
-                    contact = ?,
                     gender = ?,
-                    contract_duration = ?,
+                    contact = ?,
                     birth_date = ?,
+                    contract_duration = ?,
                     availability = ?,
-                    additional_info = ?,
-                    updated_at = ?
-                WHERE id = ? AND operator_id = ?
-            """
-            
-            cursor.execute(query, (
-                first_name,
-                last_name,
+                    additional_info = ?
+                WHERE id = ?
+            """, (
+                data.get('first_name'),
+                data.get('last_name'),
                 data.get('position'),
-                data.get('contact'),
                 data.get('gender'),
-                data.get('contract_duration'),
+                data.get('contact'),
                 data.get('birth_date'),
+                data.get('contract_duration'),
                 data.get('availability'),
                 data.get('additional_info'),
-                now,
-                employee_id,
-                data.get('operator_id')
+                employee_id
             ))
             
             conn.commit()
-            return cursor.rowcount > 0
-        finally:
             conn.close()
+            return True
+        except Exception as e:
+            print(f"Erreur dans update_employee: {str(e)}")
+            raise e
 
-    def delete_employee(self, employee_id, operator_id):
-        conn = self.get_db_connection()
+    def delete_employee(self, employee_id):
+        """Supprime un employé"""
         try:
+            conn = self.get_db_connection()
             cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM employees WHERE id = ? AND operator_id = ?",
-                (employee_id, operator_id)
-            )
+            
+            # Vérifier si l'employé existe
+            cursor.execute("SELECT id FROM employees WHERE id = ?", (employee_id,))
+            if not cursor.fetchone():
+                conn.close()
+                return False
+                
+            # Supprimer l'employé
+            cursor.execute("DELETE FROM employees WHERE id = ?", (employee_id,))
             conn.commit()
-            return cursor.rowcount > 0
-        finally:
             conn.close()
+            return True
+        except Exception as e:
+            print(f"Erreur dans delete_employee: {str(e)}")
+            raise e
 
     def get_employee_stats(self, operator_id):
-        conn = self.get_db_connection()
+        """Récupère les statistiques des employés"""
         try:
+            conn = self.get_db_connection()
             cursor = conn.cursor()
-            stats = {}
             
             # Total des employés
-            cursor.execute(
-                "SELECT COUNT(*) as total FROM employees WHERE operator_id = ?",
-                (operator_id,)
-            )
-            stats['total_employees'] = cursor.fetchone()[0]
-            
-            # Distribution par genre (Homme/Femme)
             cursor.execute("""
-                SELECT 
-                    CASE gender 
-                        WHEN 'Homme' THEN 'M'
-                        WHEN 'Femme' THEN 'F'
-                        ELSE 'Autre'
-                    END as gender_code,
-                    COUNT(*) as count 
+                SELECT COUNT(*) 
                 FROM employees 
-                WHERE operator_id = ? 
-                GROUP BY gender
+                WHERE operator_id = ?
             """, (operator_id,))
-            gender_stats = {}
-            for row in cursor.fetchall():
-                gender_stats[row[0]] = row[1]
-            stats['gender_distribution'] = gender_stats
+            total = cursor.fetchone()[0]
             
-            # Distribution par disponibilité
+            # Employés au siège
             cursor.execute("""
-                SELECT 
-                    CASE availability
-                        WHEN 'Au siège' THEN 'siege'
-                        WHEN 'À l''intérieur' THEN 'interieur'
-                        ELSE 'autre'
-                    END as availability_code,
-                    COUNT(*) as count 
+                SELECT COUNT(*) 
                 FROM employees 
-                WHERE operator_id = ? 
-                GROUP BY availability
+                WHERE operator_id = ? AND availability = 'Au siège'
             """, (operator_id,))
-            availability_stats = {}
-            for row in cursor.fetchall():
-                availability_stats[row[0]] = row[1]
-            stats['availability_distribution'] = availability_stats
+            siege = cursor.fetchone()[0]
             
-            # Contrats actifs
+            # Employés à l'intérieur
             cursor.execute("""
-                SELECT COUNT(*) as active_contracts
+                SELECT COUNT(*) 
                 FROM employees 
-                WHERE operator_id = ? 
-                AND contract_duration IS NOT NULL 
-                AND contract_duration != ''
-                AND contract_duration != 'Sans Contrat'
+                WHERE operator_id = ? AND availability = 'À l''intérieur'
             """, (operator_id,))
+            interieur = cursor.fetchone()[0]
             
-            stats['contract_distribution'] = {'active': cursor.fetchone()[0]}
+            # Répartition par genre
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM employees 
+                WHERE operator_id = ? AND gender = 'M'
+            """, (operator_id,))
+            male = cursor.fetchone()[0]
             
-            return stats
-        finally:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM employees 
+                WHERE operator_id = ? AND gender = 'F'
+            """, (operator_id,))
+            female = cursor.fetchone()[0]
+            
             conn.close()
+            
+            return {
+                'success': True,
+                'stats': {
+                    'total': total,
+                    'siege': siege,
+                    'interieur': interieur,
+                    'male': male,
+                    'female': female
+                }
+            }
+        except Exception as e:
+            print(f"Erreur dans get_employee_stats: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
