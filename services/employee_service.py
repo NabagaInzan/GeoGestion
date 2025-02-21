@@ -6,6 +6,14 @@ class EmployeeService:
     def __init__(self):
         self.db_path = "data/db/geogestion.db"
 
+    def format_name(self, name):
+        """Format le nom en majuscules"""
+        return name.upper() if name else ""
+
+    def format_first_name(self, name):
+        """Format le prénom avec première lettre en majuscule"""
+        return name.capitalize() if name else ""
+
     def get_db_connection(self):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -53,6 +61,10 @@ class EmployeeService:
             now = datetime.now().isoformat()
             employee_id = str(uuid.uuid4())
             
+            # Formatage des noms
+            first_name = self.format_first_name(data.get('first_name', ''))
+            last_name = self.format_name(data.get('last_name', ''))
+            
             query = """
                 INSERT INTO employees (
                     id, first_name, last_name, position, contact, gender,
@@ -63,8 +75,8 @@ class EmployeeService:
             
             cursor.execute(query, (
                 employee_id,
-                data.get('first_name'),
-                data.get('last_name'),
+                first_name,
+                last_name,
                 data.get('position'),
                 data.get('contact'),
                 data.get('gender'),
@@ -91,6 +103,10 @@ class EmployeeService:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
             
+            # Formatage des noms
+            first_name = self.format_first_name(data.get('first_name', ''))
+            last_name = self.format_name(data.get('last_name', ''))
+            
             # Vérifier que l'employé appartient à l'opérateur
             cursor.execute(
                 "SELECT id FROM employees WHERE id = ? AND operator_id = ?",
@@ -115,8 +131,8 @@ class EmployeeService:
             """
             
             cursor.execute(query, (
-                data.get('first_name'),
-                data.get('last_name'),
+                first_name,
+                last_name,
                 data.get('position'),
                 data.get('contact'),
                 data.get('gender'),
@@ -180,14 +196,23 @@ class EmployeeService:
             
             # Distribution par disponibilité
             cursor.execute("""
-                SELECT availability, COUNT(*) as count 
+                SELECT 
+                    CASE availability
+                        WHEN 'Au siège' THEN 'siege'
+                        WHEN 'À l''intérieur' THEN 'interieur'
+                        ELSE 'autre'
+                    END as availability_code,
+                    COUNT(*) as count 
                 FROM employees 
                 WHERE operator_id = ? 
                 GROUP BY availability
             """, (operator_id,))
-            stats['availability_distribution'] = dict(cursor.fetchall())
+            availability_stats = {}
+            for row in cursor.fetchall():
+                availability_stats[row[0]] = row[1]
+            stats['availability_distribution'] = availability_stats
             
-            # Contrats actifs (nombre total d'employés avec un contrat)
+            # Contrats actifs
             cursor.execute("""
                 SELECT COUNT(*) as active_contracts
                 FROM employees 

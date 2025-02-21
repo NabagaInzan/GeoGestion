@@ -78,7 +78,12 @@ def dashboard():
     """Affiche le tableau de bord de l'opérateur"""
     if 'operator_id' not in session:
         return redirect(url_for('index'))
-    return render_template('dashboard.html', operator_name=session.get('operator_name'))
+    
+    # Récupérer le nom de l'opérateur
+    operator = auth.get_operator_by_id(session['operator_id'])
+    operator_name = operator['name'] if operator else 'Inconnu'
+    
+    return render_template('dashboard.html', operator_name=operator_name)
 
 @app.route('/api/employees', methods=['GET'])
 @login_required
@@ -108,12 +113,30 @@ def add_employee():
     """Ajoute un nouvel employé"""
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Données invalides"}), 400
+
+        # Ajouter l'ID de l'opérateur aux données
         data['operator_id'] = session['operator_id']
         
+        # Validation des données requises
+        required_fields = ['first_name', 'last_name', 'position', 'gender', 'availability']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            return jsonify({
+                "success": False,
+                "error": f"Champs requis manquants: {', '.join(missing_fields)}"
+            }), 400
+
+        # Ajout de l'employé
         if employee_service.add_employee(data):
             return jsonify({"success": True, "message": "Employé ajouté avec succès"})
-        return jsonify({"success": False, "error": "Erreur lors de l'ajout de l'employé"}), 500
+        else:
+            return jsonify({"success": False, "error": "Erreur lors de l'ajout de l'employé"}), 500
+            
     except Exception as e:
+        print(f"Erreur lors de l'ajout d'un employé: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/employees/<employee_id>', methods=['PUT'])

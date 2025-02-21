@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoGestion AFOR - Dashboard</title>
+    <title>Emploi PRESFOR - Dashboard</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
@@ -622,7 +622,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <img src="/static/images/afor-logo.jpeg" alt="AFOR Logo" id="brandLogo">
-                <span id="brandText">GeoGestion AFOR</span>
+                <span id="brandText">Emploi PRESFOR</span>
             </a>
             <div class="d-flex align-items-center">
                 <div class="time-indicator me-3">
@@ -695,30 +695,41 @@
         </div>
 
         <!-- Table Container -->
-        <div class="table-container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-list"></i> Liste des Employés</h2>
-                <button class="btn btn-primary" id="addEmployeeBtn" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
-                    <i class="fas fa-plus"></i> Nouvel Employé
-                </button>
+        <div class="container-fluid mt-4">
+            <div class="row mb-4">
+                <div class="col">
+                    <h2 class="text-center mb-4">
+                        <i class="fas fa-users me-2"></i>
+                        Liste des Employés - Opérateur: <span class="operator-name">{{ operator_name }}</span>
+                    </h2>
+                </div>
             </div>
             
-            <div class="table-responsive">
-                <table id="employeesTable" class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nom</th>
-                            <th>Prénom</th>
-                            <th>Position</th>
-                            <th>Contact</th>
-                            <th>Genre</th>
-                            <th>Disponibilité</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-list"></i> Liste des Employés</h2>
+                    <button class="btn btn-primary" id="addEmployeeBtn" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                        <i class="fas fa-plus"></i> Nouvel Employé
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="employeesTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Poste</th>
+                                <th>Contact</th>
+                                <th>Genre</th>
+                                <th>Disponibilité</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -732,10 +743,10 @@
                         <i class="fas fa-user-plus me-2"></i>
                         Ajouter un Employé
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addEmployeeForm" class="employee-form">
+                    <form id="addEmployeeForm" class="needs-validation" novalidate>
                         <div class="row g-4">
                             <!-- Première ligne -->
                             <div class="col-md-6">
@@ -755,7 +766,7 @@
                             <div class="col-md-6">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="position" name="position" required>
-                                    <label for="position">Position</label>
+                                    <label for="position">Poste</label>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -802,8 +813,8 @@
                                 <div class="form-floating">
                                     <select class="form-select" id="availability" name="availability" required>
                                         <option value="">Sélectionnez...</option>
-                                        <option value="Disponible">Disponible</option>
-                                        <option value="Non Disponible">Non Disponible</option>
+                                        <option value="Au siège">Au siège</option>
+                                        <option value="À l'intérieur">À l'intérieur</option>
                                     </select>
                                     <label for="availability">Disponibilité</label>
                                 </div>
