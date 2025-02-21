@@ -9,14 +9,22 @@ $(document).ready(function() {
             const img = new Image();
             img.crossOrigin = 'Anonymous';
             img.onload = function () {
-                const canvas = document.createElement('canvas');
-                canvas.width = this.width;
-                canvas.height = this.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(this, 0, 0);
-                resolve(canvas.toDataURL('image/jpeg'));
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = this.width;
+                    canvas.height = this.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(this, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg').split(',')[1]);
+                } catch (error) {
+                    console.error('Erreur lors de la conversion de l\'image:', error);
+                    reject(error);
+                }
             };
-            img.onerror = reject;
+            img.onerror = function(error) {
+                console.error('Erreur lors du chargement de l\'image:', error);
+                reject(error);
+            };
             img.src = url;
         });
     }
@@ -85,95 +93,174 @@ $(document).ready(function() {
                         exportOptions: {
                             columns: ':visible'
                         },
-                        customize: async function (doc) {
-                            // Chargement des images
-                            const backgroundImage = await getBase64FromImageUrl('/static/images/operateur.jpeg');
-                            const logoImage = await getBase64FromImageUrl('/static/images/logo.png');
-
-                            // Style du document
-                            doc.pageMargins = [40, 100, 40, 40];
-                            doc.defaultStyle = {
-                                font: 'Roboto',
-                                fontSize: 10
-                            };
-
-                            // Ajout du fond d'écran avec opacité
-                            doc.background = {
-                                image: backgroundImage,
-                                width: 595.28, // A4 width
-                                opacity: 0.1
-                            };
-
-                            // En-tête avec logo
-                            doc.header = {
-                                columns: [
-                                    {
-                                        image: logoImage,
-                                        width: 100,
-                                        alignment: 'left',
-                                        margin: [40, 20, 0, 0]
-                                    },
-                                    {
-                                        text: 'GeoGestion AFOR\nListe des Employés',
-                                        alignment: 'right',
-                                        margin: [0, 20, 40, 0],
-                                        fontSize: 16,
+                        customize: function (doc) {
+                            try {
+                                // Définition des styles de base
+                                doc.styles = {
+                                    header: {
+                                        fontSize: 18,
                                         bold: true,
                                         color: '#059669'
+                                    },
+                                    subheader: {
+                                        fontSize: 14,
+                                        bold: true,
+                                        color: '#4B5563'
+                                    },
+                                    tableHeader: {
+                                        bold: true,
+                                        fontSize: 11,
+                                        color: 'white',
+                                        fillColor: '#059669',
+                                        alignment: 'left'
+                                    },
+                                    defaultStyle: {
+                                        fontSize: 10,
+                                        color: '#4B5563'
                                     }
-                                ]
-                            };
+                                };
 
-                            // Pied de page
-                            doc.footer = function(currentPage, pageCount) {
-                                return {
+                                // Configuration de la page
+                                doc.pageMargins = [40, 100, 40, 40];
+                                doc.pageOrientation = 'landscape';
+
+                                // En-tête avec logo
+                                const logoUrl = '/static/images/logo.png';
+                                const img = new Image();
+                                img.src = logoUrl;
+
+                                // Attendre que l'image soit chargée
+                                img.onload = function() {
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    ctx.drawImage(img, 0, 0);
+                                    const imageData = canvas.toDataURL('image/png');
+
+                                    // Ajouter le logo et le titre
+                                    doc.content.unshift({
+                                        columns: [
+                                            {
+                                                image: imageData,
+                                                width: 100,
+                                                alignment: 'left'
+                                            },
+                                            {
+                                                text: 'GeoGestion AFOR - Liste des Employés',
+                                                style: 'header',
+                                                alignment: 'center',
+                                                margin: [0, 20, 0, 0]
+                                            }
+                                        ],
+                                        margin: [40, 20, 40, 20]
+                                    });
+                                };
+
+                                img.onerror = function() {
+                                    console.warn("Impossible de charger le logo");
+                                    // Ajouter uniquement le titre si le logo ne peut pas être chargé
+                                    doc.content.unshift({
+                                        text: 'GeoGestion AFOR - Liste des Employés',
+                                        style: 'header',
+                                        alignment: 'center',
+                                        margin: [0, 20, 0, 20]
+                                    });
+                                };
+
+                                // Vérifions que le tableau existe
+                                const tableIndex = doc.content.findIndex(item => item.table);
+                                if (tableIndex !== -1) {
+                                    // Configuration du tableau
+                                    const table = doc.content[tableIndex].table;
+                                    
+                                    // Définir la largeur des colonnes
+                                    table.widths = [
+                                        '*', // Nom
+                                        '*', // Prénom
+                                        'auto', // Position
+                                        'auto', // Contact
+                                        'auto', // Genre
+                                        'auto', // Disponibilité
+                                        'auto'  // Actions
+                                    ];
+
+                                    // Style des en-têtes
+                                    if (table.body && table.body[0]) {
+                                        table.headerRows = 1;
+                                        table.body[0].forEach(cell => {
+                                            cell.fillColor = '#059669';
+                                            cell.color = '#FFFFFF';
+                                            cell.fontSize = 11;
+                                            cell.bold = true;
+                                            cell.margin = [5, 7, 5, 7];
+                                        });
+
+                                        // Style des cellules
+                                        for (let i = 1; i < table.body.length; i++) {
+                                            table.body[i].forEach(cell => {
+                                                cell.fontSize = 10;
+                                                cell.margin = [5, 5, 5, 5];
+                                            });
+                                        }
+                                    }
+
+                                    // Style du tableau
+                                    table.layout = {
+                                        hLineWidth: function(i, node) { 
+                                            return (i === 0 || i === node.table.body.length) ? 1 : 0.5;
+                                        },
+                                        vLineWidth: function(i, node) { 
+                                            return 0.5;
+                                        },
+                                        hLineColor: function(i, node) {
+                                            return (i === 0 || i === node.table.body.length) ? '#059669' : '#E5E7EB';
+                                        },
+                                        vLineColor: function(i, node) {
+                                            return '#E5E7EB';
+                                        },
+                                        paddingLeft: function(i) { return 8; },
+                                        paddingRight: function(i) { return 8; },
+                                        paddingTop: function(i) { return 6; },
+                                        paddingBottom: function(i) { return 6; },
+                                        fillColor: function(rowIndex, node, columnIndex) {
+                                            return (rowIndex % 2 === 1) ? '#F9FAFB' : null;
+                                        }
+                                    };
+                                }
+
+                                // Pied de page avec date et nombre d'employés
+                                const footer = {
                                     columns: [
                                         {
-                                            text: 'Généré le ' + new Date().toLocaleDateString('fr-FR', {
-                                                day: '2-digit',
-                                                month: 'long',
+                                            text: `Généré le ${new Date().toLocaleDateString('fr-FR', {
+                                                weekday: 'long',
                                                 year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
                                                 hour: '2-digit',
                                                 minute: '2-digit'
-                                            }),
+                                            })}`,
+                                            style: 'defaultStyle',
                                             alignment: 'left',
-                                            margin: [40, 0, 0, 0],
-                                            fontSize: 8
+                                            width: '*'
                                         },
                                         {
-                                            text: 'Page ' + currentPage + ' sur ' + pageCount,
+                                            text: `Nombre total d'employés : ${doc.content[tableIndex].table.body.length - 1}`,
+                                            style: 'subheader',
                                             alignment: 'right',
-                                            margin: [0, 0, 40, 0],
-                                            fontSize: 8
+                                            width: 'auto'
                                         }
-                                    ]
+                                    ],
+                                    margin: [40, 20, 40, 0]
                                 };
-                            };
 
-                            // Style du tableau
-                            doc.styles.tableHeader = {
-                                fillColor: '#059669',
-                                color: '#ffffff',
-                                bold: true,
-                                fontSize: 11,
-                                alignment: 'left'
-                            };
+                                // Ajouter le pied de page
+                                doc.content.push(footer);
 
-                            doc.styles.tableBodyEven = {
-                                fillColor: '#f3f4f6'
-                            };
-
-                            // Ajout d'une bordure autour du tableau
-                            doc.content[0].table.layout = {
-                                hLineWidth: function(i, node) { return 1; },
-                                vLineWidth: function(i, node) { return 1; },
-                                hLineColor: function(i, node) { return '#e5e7eb'; },
-                                vLineColor: function(i, node) { return '#e5e7eb'; },
-                                paddingLeft: function(i, node) { return 8; },
-                                paddingRight: function(i, node) { return 8; },
-                                paddingTop: function(i, node) { return 6; },
-                                paddingBottom: function(i, node) { return 6; }
-                            };
+                            } catch (error) {
+                                console.error('Erreur lors de la personnalisation du PDF:', error);
+                            }
                         }
                     },
                     {
@@ -256,7 +343,8 @@ $(document).ready(function() {
                     const stats = response.stats;
                     
                     // Mise à jour du total des employés
-                    $('.total-employees').text(stats.total_employees);
+                    const totalEmployees = stats.total_employees || 0;
+                    $('.total-employees').text(totalEmployees);
                     
                     // Mise à jour de la répartition homme/femme
                     const men = stats.gender_distribution['M'] || 0;
@@ -264,16 +352,24 @@ $(document).ready(function() {
                     $('.gender-stats').text(`${men}/${women}`);
                     
                     // Mise à jour des contrats actifs
-                    const activeContracts = (stats.contract_distribution['CDI'] || 0) + 
-                                         (stats.contract_distribution['CDD'] || 0);
+                    const activeContracts = stats.contract_distribution.active || 0;
                     $('.contract-stats').text(activeContracts);
                     
                     // Mise à jour des employés disponibles
-                    $('.availability-stats').text(stats.availability_distribution['Disponible'] || 0);
+                    let availableEmployees = 0;
+                    if (stats.availability_distribution) {
+                        availableEmployees = stats.availability_distribution['Disponible'] || 0;
+                    }
+                    $('.availability-stats').text(availableEmployees);
                 }
             })
             .fail(function(xhr) {
                 console.error('Erreur lors du chargement des statistiques:', xhr.responseText);
+                // Afficher des valeurs par défaut en cas d'erreur
+                $('.total-employees').text('0');
+                $('.gender-stats').text('0/0');
+                $('.contract-stats').text('0');
+                $('.availability-stats').text('0');
             });
     }
 

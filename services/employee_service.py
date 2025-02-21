@@ -160,16 +160,25 @@ class EmployeeService:
             )
             stats['total_employees'] = cursor.fetchone()[0]
             
-            # Employés par genre
+            # Distribution par genre (Homme/Femme)
             cursor.execute("""
-                SELECT gender, COUNT(*) as count 
+                SELECT 
+                    CASE gender 
+                        WHEN 'Homme' THEN 'M'
+                        WHEN 'Femme' THEN 'F'
+                        ELSE 'Autre'
+                    END as gender_code,
+                    COUNT(*) as count 
                 FROM employees 
                 WHERE operator_id = ? 
                 GROUP BY gender
             """, (operator_id,))
-            stats['gender_distribution'] = dict(cursor.fetchall())
+            gender_stats = {}
+            for row in cursor.fetchall():
+                gender_stats[row[0]] = row[1]
+            stats['gender_distribution'] = gender_stats
             
-            # Employés par disponibilité
+            # Distribution par disponibilité
             cursor.execute("""
                 SELECT availability, COUNT(*) as count 
                 FROM employees 
@@ -178,14 +187,17 @@ class EmployeeService:
             """, (operator_id,))
             stats['availability_distribution'] = dict(cursor.fetchall())
             
-            # Employés par type de contrat
+            # Contrats actifs (nombre total d'employés avec un contrat)
             cursor.execute("""
-                SELECT contract_duration, COUNT(*) as count 
+                SELECT COUNT(*) as active_contracts
                 FROM employees 
                 WHERE operator_id = ? 
-                GROUP BY contract_duration
+                AND contract_duration IS NOT NULL 
+                AND contract_duration != ''
+                AND contract_duration != 'Sans Contrat'
             """, (operator_id,))
-            stats['contract_distribution'] = dict(cursor.fetchall())
+            
+            stats['contract_distribution'] = {'active': cursor.fetchone()[0]}
             
             return stats
         finally:
