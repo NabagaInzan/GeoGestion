@@ -47,8 +47,8 @@ function loadStats() {
                 // Mise à jour de la situation géographique
                 const availableHtml = `
                     <div class="d-flex flex-column">
-                        <span class="badge badge-siege mb-1">Au siège: ${stats.siege}</span>
-                        <span class="badge badge-interieur">À l'intérieur: ${stats.interieur}</span>
+                        <span class="badge badge-siege mb-1" style="color: black;">Au siège: ${stats.siege}</span>
+                        <span class="badge badge-interieur" style="color: black;">À l'intérieur: ${stats.interieur}</span>
                     </div>
                 `;
                 $('#availableEmployees').html(availableHtml);
@@ -95,12 +95,17 @@ function initializeEmployeesTable() {
             { data: 'first_name' },
             { data: 'position' },
             { data: 'contact' },
-            { data: 'gender' },
+            { 
+                data: 'gender',
+                render: function(data) {
+                    return data === 'M' ? 'Homme' : 'Femme';
+                }
+            },
             { 
                 data: 'availability',
                 render: function(data) {
                     const badgeClass = data === 'Au siège' ? 'badge-siege' : 'badge-interieur';
-                    return `<span class="badge ${badgeClass}">${data}</span>`;
+                    return `<span class="badge ${badgeClass}" style="color: black;">${data}</span>`;
                 }
             },
             {
@@ -149,6 +154,34 @@ function initializeEmployeesTable() {
             url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
         }
     });
+}
+
+// Fonction pour calculer l'âge
+function calculateAge(birthdate) {
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+}
+
+// Fonction pour calculer la durée du contrat
+function calculateContractDuration(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+    const years = Math.floor(diffYears);
+    const months = Math.floor((diffYears - years) * 12);
+    
+    return {
+        years: years,
+        months: months
+    };
 }
 
 // Initialisation au chargement de la page
@@ -286,5 +319,31 @@ $(document).ready(function() {
         $('#addEmployeeForm')[0].reset();
         currentEmployeeId = null;
         $('.modal-title').html('<i class="fas fa-user-plus me-2"></i>Ajouter un Employé');
+    });
+
+    // Gestionnaires d'événements pour les dates
+    $('#birthdate').on('change', function() {
+        const age = calculateAge(this.value);
+        $('#age-display').text(`Âge: ${age} ans`);
+    });
+
+    $('#contract_start, #contract_end').on('change', function() {
+        const startDate = $('#contract_start').val();
+        const endDate = $('#contract_end').val();
+        
+        if (startDate && endDate) {
+            const duration = calculateContractDuration(startDate, endDate);
+            let durationText = '';
+            
+            if (duration.years > 0) {
+                durationText += `${duration.years} an${duration.years > 1 ? 's' : ''}`;
+            }
+            if (duration.months > 0) {
+                if (durationText) durationText += ' et ';
+                durationText += `${duration.months} mois`;
+            }
+            
+            $('#contract-duration-display').text(`Durée: ${durationText}`);
+        }
     });
 });

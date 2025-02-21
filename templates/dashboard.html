@@ -880,14 +880,22 @@
                             <!-- Date de naissance et Durée du contrat -->
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="date" class="form-control" id="birthDate" name="birth_date">
-                                    <label for="birthDate">Date de naissance</label>
+                                    <input type="date" class="form-control" id="birthdate" name="birthdate" required>
+                                    <label for="birthdate">Date de naissance</label>
+                                    <small class="text-muted" id="age-display"></small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="contractDuration" name="contract_duration">
-                                    <label for="contractDuration">Durée du contrat</label>
+                                    <input type="date" class="form-control" id="contract_start" name="contract_start" required>
+                                    <label for="contract_start">Début du contrat</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="contract_end" name="contract_end" required>
+                                    <label for="contract_end">Fin du contrat</label>
+                                    <small class="text-muted" id="contract-duration-display"></small>
                                 </div>
                             </div>
                             <!-- Informations supplémentaires -->
@@ -977,7 +985,7 @@
             });
 
             // Calcul automatique de l'âge
-            const birthDate = document.getElementById('birthDate');
+            const birthDate = document.getElementById('birthdate');
             const ageHelper = document.querySelector('.age-text');
             
             birthDate.addEventListener('change', function() {
