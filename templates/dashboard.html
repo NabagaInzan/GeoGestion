@@ -168,6 +168,12 @@
             font-size: 1.1em;
         }
 
+        .stats-loader {
+            font-size: 1.5em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
         .table-container {
             background: var(--card-bg);
             border-radius: 12px;
@@ -651,6 +657,9 @@
                     <i class="fas fa-users stats-icon"></i>
                     <h3 class="total-employees">0</h3>
                     <p>Total Employés</p>
+                    <span class="stats-loader" style="display: none;">
+                        <i class="fas fa-sync fa-spin"></i>
+                    </span>
                 </div>
             </div>
             <div class="col-md-3">
@@ -658,20 +667,29 @@
                     <i class="fas fa-venus-mars stats-icon"></i>
                     <h3 class="gender-stats">0/0</h3>
                     <p>Hommes/Femmes</p>
+                    <span class="stats-loader" style="display: none;">
+                        <i class="fas fa-sync fa-spin"></i>
+                    </span>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stats-card">
-                    <i class="fas fa-business-time stats-icon"></i>
+                    <i class="fas fa-file-contract stats-icon"></i>
                     <h3 class="contract-stats">0</h3>
-                    <p>Contrats</p>
+                    <p>Contrats Actifs</p>
+                    <span class="stats-loader" style="display: none;">
+                        <i class="fas fa-sync fa-spin"></i>
+                    </span>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stats-card">
-                    <i class="fas fa-check-circle stats-icon"></i>
+                    <i class="fas fa-user-check stats-icon"></i>
                     <h3 class="availability-stats">0</h3>
                     <p>Employés Disponibles</p>
+                    <span class="stats-loader" style="display: none;">
+                        <i class="fas fa-sync fa-spin"></i>
+                    </span>
                 </div>
             </div>
         </div>

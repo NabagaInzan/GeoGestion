@@ -345,11 +345,13 @@ $(document).ready(function() {
 
     // Charger les statistiques
     function loadStats() {
+        $('.stats-loader').show(); // Ajout d'un indicateur de chargement
+        
         $.ajax({
             url: config.apiBaseUrl + '/api/stats',
             method: 'GET',
             success: function(response) {
-                if (response.success) {
+                if (response && response.success) {
                     const stats = response.stats;
                     
                     // Mise à jour du total des employés
@@ -357,35 +359,58 @@ $(document).ready(function() {
                     $('.total-employees').text(totalEmployees);
                     
                     // Mise à jour de la répartition homme/femme
-                    const men = stats.gender_distribution['M'] || 0;
-                    const women = stats.gender_distribution['F'] || 0;
+                    const men = stats.gender_distribution ? (stats.gender_distribution['M'] || 0) : 0;
+                    const women = stats.gender_distribution ? (stats.gender_distribution['F'] || 0) : 0;
                     $('.gender-stats').text(`${men}/${women}`);
                     
                     // Mise à jour des contrats actifs
-                    const activeContracts = stats.contract_distribution.active || 0;
+                    const activeContracts = stats.contract_distribution ? (stats.contract_distribution.active || 0) : 0;
                     $('.contract-stats').text(activeContracts);
                     
                     // Mise à jour des employés disponibles
                     let availableEmployees = 0;
-                    if (stats.availability_distribution) {
-                        availableEmployees = stats.availability_distribution['Disponible'] || 0;
+                    if (stats.availability_distribution && stats.availability_distribution['Disponible']) {
+                        availableEmployees = stats.availability_distribution['Disponible'];
                     }
                     $('.availability-stats').text(availableEmployees);
+                    
+                    // Afficher un message de succès discret
+                    showToast('Statistiques mises à jour avec succès', 'fas fa-chart-bar');
+                } else {
+                    console.error('Format de réponse invalide:', response);
+                    showToast('Erreur lors de la mise à jour des statistiques: données invalides', 'fas fa-exclamation-triangle');
+                    resetStats();
                 }
+            },
+            error: function(xhr, status, error) {
+                console.error('Erreur lors du chargement des statistiques:', error);
+                showToast('Erreur de connexion lors de la mise à jour des statistiques', 'fas fa-exclamation-triangle');
+                resetStats();
+            },
+            complete: function() {
+                $('.stats-loader').hide();
             }
-        })
-        .fail(function(xhr) {
-            console.error('Erreur lors du chargement des statistiques:', xhr.responseText);
-            // Afficher des valeurs par défaut en cas d'erreur
-            $('.total-employees').text('0');
-            $('.gender-stats').text('0/0');
-            $('.contract-stats').text('0');
-            $('.availability-stats').text('0');
         });
+    }
+
+    // Fonction pour réinitialiser les statistiques
+    function resetStats() {
+        $('.total-employees').text('--');
+        $('.gender-stats').text('--/--');
+        $('.contract-stats').text('--');
+        $('.availability-stats').text('--');
     }
 
     // Charger les statistiques au démarrage
     loadStats();
+
+    // Rafraîchir les statistiques toutes les 60 secondes
+    setInterval(loadStats, 60000);
+
+    // Rafraîchir les statistiques après chaque modification d'employé
+    function refreshStats() {
+        setTimeout(loadStats, 1000); // Délai d'une seconde pour laisser le temps à la base de données de se mettre à jour
+    }
 
     // Gestionnaire pour le bouton d'ajout
     $('#addEmployeeBtn').click(function() {
