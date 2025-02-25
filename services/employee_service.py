@@ -1,6 +1,9 @@
 import sqlite3
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 class EmployeeService:
     def __init__(self):
@@ -19,20 +22,87 @@ class EmployeeService:
         conn.row_factory = sqlite3.Row
         return conn
 
+    def calculate_age(self, birth_date_str):
+        """Calcule l'âge exact à partir de la date de naissance"""
+        if not birth_date_str:
+            return None
+        try:
+            birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+            today = datetime.now()
+            age = today.year - birth_date.year
+            # Vérifier si l'anniversaire n'est pas encore passé cette année
+            if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
+                age -= 1
+            return age
+        except:
+            return None
+
     def get_employees_by_operator(self, operator_id):
         conn = self.get_db_connection()
         try:
             cursor = conn.cursor()
             query = """
-                SELECT id, first_name, last_name, position, contact, gender,
-                       contract_duration, birth_date, availability, additional_info,
-                       created_at, updated_at
-                FROM employees
-                WHERE operator_id = ?
-                ORDER BY created_at DESC
+                WITH RankedContracts AS (
+                    SELECT 
+                        c.*,
+                        ROW_NUMBER() OVER (PARTITION BY c.employee_id ORDER BY c.start_date DESC) as rn
+                    FROM contracts c
+                )
+                SELECT 
+                    e.id, e.first_name, e.last_name, e.position, e.contact, e.gender,
+                    CASE 
+                        WHEN e.availability = 'Disponible' THEN 'Au siège'
+                        ELSE 'À l''intérieur'
+                    END as availability,
+                    e.created_at, e.updated_at, e.birth_date,
+                    c.type as contract_type, c.start_date, c.end_date, c.salary,
+                    c.department, 
+                    CASE 
+                        WHEN c.status = 'En cours' THEN 'En cours'
+                        ELSE 'Expiré'
+                    END as contract_status,
+                    e.contract_duration,
+                    e.additional_info
+                FROM employees e
+                LEFT JOIN RankedContracts c ON e.id = c.employee_id AND c.rn = 1
+                WHERE e.operator_id = ?
+                ORDER BY e.last_name ASC
             """
             cursor.execute(query, (operator_id,))
-            employees = [dict(row) for row in cursor.fetchall()]
+            employees = []
+            for row in cursor.fetchall():
+                employee = dict(row)
+                
+                # Calculer l'âge à partir de la date de naissance
+                birth_date = employee.get('birth_date')
+                age = None
+                if birth_date:
+                    try:
+                        print(f"Date de naissance trouvée: {birth_date}")  # Debug log
+                        birth_date = datetime.strptime(birth_date, '%Y-%m-%d')
+                        today = datetime.now()
+                        age = today.year - birth_date.year
+                        if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
+                            age -= 1
+                        print(f"Âge calculé: {age}")  # Debug log
+                    except Exception as e:
+                        print(f"Erreur lors du calcul de l'âge: {str(e)}")  # Debug log
+                        age = None
+                
+                employee['age'] = age
+                
+                # Créer un sous-objet contrat
+                contract = {
+                    'type': employee.pop('contract_type'),
+                    'start_date': employee.pop('start_date'),
+                    'end_date': employee.pop('end_date'),
+                    'salary': employee.pop('salary'),
+                    'department': employee.pop('department'),
+                    'status': employee.pop('contract_status'),
+                    'duration': employee.pop('contract_duration')
+                }
+                employee['contract'] = contract
+                employees.append(employee)
             return employees
         finally:
             conn.close()
@@ -80,6 +150,22 @@ class EmployeeService:
             first_name = self.format_first_name(data.get('first_name', ''))
             last_name = self.format_name(data.get('last_name', ''))
             
+            # Gestion de la date de début du contrat
+            contract_start_date = data.get('contract_start_date')
+            if not contract_start_date:
+                contract_start_date = datetime.now().date().isoformat()
+            
+            # Formatage de la durée du contrat
+            contract_duration = data.get('contract_duration')
+            if contract_duration:
+                try:
+                    contract_duration = str(int(contract_duration))
+                except (ValueError, TypeError):
+                    contract_duration = '3'
+            else:
+                contract_duration = '3'
+            
+            # Insérer l'employé
             query = """
                 INSERT INTO employees (
                     id, first_name, last_name, position, contact, gender,
@@ -95,7 +181,7 @@ class EmployeeService:
                 data.get('position'),
                 data.get('contact'),
                 data.get('gender'),
-                data.get('contract_duration'),
+                contract_duration,
                 data.get('birth_date'),
                 data.get('operator_id'),
                 data.get('availability'),
@@ -104,10 +190,49 @@ class EmployeeService:
                 now
             ))
             
-            conn.commit()
-            return True
+            # Créer le contrat initial
+            try:
+                start_date = datetime.fromisoformat(contract_start_date).date()
+                duration_months = int(contract_duration)
+                end_date = start_date + timedelta(days=duration_months * 30)  # Approximation mois
+                
+                # Déterminer le statut du contrat
+                contract_status = 'Expiré' if data.get('contract_expired') else 'En cours'
+                
+                contract_query = """
+                    INSERT INTO contracts (
+                        id, employee_id, type, start_date, end_date,
+                        salary, department, position, status, additional_terms,
+                        created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                
+                cursor.execute(contract_query, (
+                    str(uuid.uuid4()),
+                    employee_id,
+                    'CDD',  # Type de contrat par défaut
+                    start_date.isoformat(),
+                    end_date.isoformat(),
+                    data.get('salary', 0),
+                    data.get('department', 'Non spécifié'),
+                    data.get('position'),
+                    contract_status,
+                    data.get('additional_terms', ''),
+                    now,
+                    now
+                ))
+                
+                conn.commit()
+                return True
+                
+            except Exception as e:
+                print(f"Erreur lors de la création du contrat: {str(e)}")
+                conn.rollback()
+                return False
+                
         except Exception as e:
-            print(f"Error adding employee: {str(e)}")
+            print(f"Erreur lors de l'ajout d'un employé: {str(e)}")
+            conn.rollback()
             return False
         finally:
             conn.close()
@@ -239,3 +364,85 @@ class EmployeeService:
         finally:
             if conn:
                 conn.close()
+
+    def renew_contract(self, employee_id, contract_type, duration, position=None):
+        """Renouvelle le contrat d'un employé"""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor()
+            
+            # Vérifier si l'employé existe
+            cursor.execute("SELECT id FROM employees WHERE id = ?", (employee_id,))
+            if not cursor.fetchone():
+                return False
+            
+            # Marquer l'ancien contrat comme expiré
+            cursor.execute("""
+                UPDATE contracts 
+                SET status = 'Expiré', updated_at = ?
+                WHERE employee_id = ? AND status = 'En cours'
+            """, (datetime.now(), employee_id))
+            
+            # Créer le nouveau contrat
+            start_date = datetime.now().date()
+            end_date = start_date + timedelta(days=int(duration) * 30)  # Approximation mois
+            
+            # Si un nouveau poste est spécifié, l'utiliser
+            if position:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET position = ?, updated_at = ?
+                    WHERE id = ?
+                """, (position, datetime.now(), employee_id))
+            
+            # Récupérer les informations du dernier contrat
+            cursor.execute("""
+                SELECT salary, department, position 
+                FROM contracts 
+                WHERE employee_id = ? 
+                ORDER BY end_date DESC 
+                LIMIT 1
+            """, (employee_id,))
+            last_contract = cursor.fetchone()
+            
+            if not last_contract:
+                return False
+                
+            cursor.execute("""
+                INSERT INTO contracts (
+                    id, employee_id, type, start_date, end_date,
+                    salary, department, position, status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'En cours', ?, ?)
+            """, (
+                str(uuid.uuid4()),
+                employee_id,
+                contract_type,
+                start_date,
+                end_date,
+                last_contract['salary'],
+                last_contract['department'],
+                position or last_contract['position'],
+                datetime.now(),
+                datetime.now()
+            ))
+            
+            # Mettre à jour la durée du contrat dans la table employees
+            cursor.execute("""
+                UPDATE employees 
+                SET contract_duration = ?, updated_at = ?
+                WHERE id = ?
+            """, (
+                f"{duration} mois",
+                datetime.now(),
+                employee_id
+            ))
+            
+            conn.commit()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erreur lors du renouvellement du contrat : {str(e)}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()

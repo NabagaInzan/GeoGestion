@@ -848,14 +848,25 @@ input:checked + .slider:before {
 
 /* Style pour l'horloge */
 .time-indicator {
-    font-family: 'Segoe UI', system-ui;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: white;
 }
 
 .time-indicator i {
-    color: var(--afor-green);
-    margin-right: 8px;
+    color: white;
+    font-size: 1rem;
+}
+
+.time-indicator span {
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    font-size: 1rem;
+    color: white;
 }
 
 /* Amélioration des styles DataTables */
@@ -930,4 +941,344 @@ input:checked + .slider:before {
     border-radius: 15px;
     margin-left: 10px;
     background-color: var(--afor-green);
+}
+
+/* Styles uniformes pour le tableau */
+.table {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-size: 14px !important;
+    color: var(--text-color) !important;
+}
+
+.table th,
+.table td {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    vertical-align: middle !important;
+    color: inherit !important;
+    text-transform: none !important;
+    padding: 12px !important;
+}
+
+.table th {
+    font-weight: 600 !important;
+    background-color: var(--card-bg) !important;
+}
+
+.table td {
+    font-weight: 400 !important;
+    background-color: var(--input-bg) !important;
+}
+
+/* Uniformiser tous les textes dans le tableau, y compris les badges */
+.table td *,
+.table td span,
+.table td div,
+.table .badge {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    color: inherit !important;
+    text-transform: none !important;
+    background: none !important;
+    padding: 0 !important;
+    font-weight: inherit !important;
+}
+
+/* Retirer les styles de badge par défaut */
+.table .badge-siege,
+.table .badge-interieur {
+    background: none !important;
+    color: inherit !important;
+    border: none !important;
+    padding: 0 !important;
+    font-weight: inherit !important;
+    display: inline !important;
+}
+
+/* Assurer que les boutons dans le tableau ont la même police */
+.table .btn,
+.table .badge {
+    font-family: inherit !important;
+    font-size: inherit !important;
+}
+
+/* Style spécifique pour la situation géographique */
+.table td[data-situation],
+.table td:nth-child(6) {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    color: inherit !important;
+    text-transform: none !important;
+}
+
+/* Styles uniformes pour le tableau */
+.table {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-size: 14px !important;
+}
+
+.table th,
+.table td {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    vertical-align: middle !important;
+}
+
+.table th {
+    font-weight: 600 !important;
+    text-transform: none !important;
+}
+
+.table td {
+    font-weight: 400 !important;
+}
+
+/* Assurer que les boutons dans le tableau ont la même police */
+.table .btn,
+.table .badge {
+    font-family: inherit !important;
+    font-size: inherit !important;
+}
+
+/* Styles pour le logo */
+#brandLogo {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+}
+
+.logo-container img {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+    margin-bottom: 20px;
+}
+
+/* Animation pour le texte du logo */
+@keyframes textGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+#brandText {
+    font-size: 24px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    background: linear-gradient(
+        45deg,
+        var(--afor-green) 0%,
+        var(--afor-light-green) 25%,
+        var(--afor-green-hover) 50%,
+        var(--afor-light-green) 75%,
+        var(--afor-green) 100%
+    );
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: textGradient 5s ease infinite;
+    position: relative;
+    display: inline-block;
+}
+
+#brandText::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background: var(--afor-green);
+    transition: all 0.3s ease-in-out;
+    transform: translateX(-50%);
+}
+
+#brandText:hover::after {
+    width: 100%;
+}
+
+/* Animation de pulsation au chargement */
+@keyframes pulseText {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.navbar-brand {
+    animation: pulseText 2s ease-in-out;
+}
+
+/* Animation du logo */
+.logo-text {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    display: inline-block;
+}
+
+.logo-text .letter {
+    display: inline-block;
+    animation: wavyText 2s infinite;
+    animation-delay: calc(.1s * var(--i));
+    transform-origin: center;
+}
+
+.logo-text .space {
+    width: 0.5em;
+    display: inline-block;
+}
+
+.logo-text .letter:nth-child(1) { --i: 1; }
+.logo-text .letter:nth-child(2) { --i: 2; }
+.logo-text .letter:nth-child(3) { --i: 3; }
+.logo-text .letter:nth-child(4) { --i: 4; }
+.logo-text .letter:nth-child(5) { --i: 5; }
+.logo-text .letter:nth-child(6) { --i: 6; }
+.logo-text .letter:nth-child(8) { --i: 8; }
+.logo-text .letter:nth-child(9) { --i: 9; }
+.logo-text .letter:nth-child(10) { --i: 10; }
+.logo-text .letter:nth-child(11) { --i: 11; }
+.logo-text .letter:nth-child(12) { --i: 12; }
+.logo-text .letter:nth-child(13) { --i: 13; }
+.logo-text .letter:nth-child(14) { --i: 14; }
+
+@keyframes wavyText {
+    0%, 100% {
+        transform: translateY(0);
+        color: #2c3e50;
+    }
+    25% {
+        transform: translateY(-10px) scale(1.1);
+        color: #3498db;
+    }
+    50% {
+        transform: translateY(0) scale(1);
+        color: #2c3e50;
+    }
+    75% {
+        transform: translateY(10px) scale(0.9);
+        color: #e74c3c;
+    }
+}
+
+/* Style hover pour chaque lettre */
+.logo-text .letter:hover {
+    animation: popEffect 0.5s ease;
+    color: #3498db;
+}
+
+@keyframes popEffect {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Style de la page de login */
+.login-container {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    margin: 2rem auto;
+    position: relative;
+    z-index: 2;
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.password-input {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.toggle-password:hover {
+    color: #495057;
+}
+
+.admin-field {
+    display: none;
+    margin-bottom: 1rem;
+}
+
+/* Styles pour la navbar */
+.navbar {
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar .theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .theme-icon {
+    color: #fff;
+    margin: 0 0.5rem;
+}
+
+.navbar .dropdown-menu {
+    margin-top: 0.5rem;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar .dropdown-item {
+    padding: 0.5rem 1rem;
+    color: #333;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: var(--afor-green);
+}
+
+.navbar .dropdown-item i {
+    width: 1.5rem;
+    text-align: center;
+}
+
+.navbar .btn-outline-light:hover {
+    background-color: rgba(255,255,255,0.1);
 }

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const adminSwitch = document.getElementById('adminSwitch');
     const passwordToggle = document.querySelector('.password-toggle');
 
-    // Charger la liste des opérateurs
+    // Charger la liste des acteurs
     fetch('/get_operators')
         .then(response => response.json())
         .then(operators => {
@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 usernameSelect.appendChild(option);
             });
         })
-        .catch(error => console.error('Erreur lors du chargement des opérateurs:', error));
+        .catch(error => console.error('Erreur lors du chargement des acteurs:', error));
 
-    // Gérer le changement d'opérateur
+    // Gérer le changement d'acteur
     usernameSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         if (selectedOption && !adminSwitch.checked) {
