@@ -74,12 +74,20 @@ function loadStats() {
 function initializeEmployeesTable() {
     employeesTable = $('#employeesTable').DataTable({
         language: {
-            url: '/static/js/datatables-fr.json'
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
         },
         select: {
             style: 'multi',
             selector: 'td:first-child'
         },
+        order: [[1, 'asc']],
+        columnDefs: [
+            {
+                targets: 0,
+                orderable: false,
+                className: 'select-checkbox'
+            }
+        ],
         ajax: {
             url: '/api/employees',
             dataSrc: ''
@@ -154,8 +162,7 @@ function initializeEmployeesTable() {
                     `;
                 }
             }
-        ],
-        order: [[1, 'asc']]
+        ]
     });
 
     // Gestion de la sélection des lignes
@@ -502,109 +509,69 @@ function updateCurrentContractsData(data) {
     currentContractsData = data;
 }
 
+// Fonction pour exporter l'historique des contrats vers Excel
+function exportContractsToExcel(data) {
+    const contractsData = data.contracts.map(contract => {
+        const duration = calculateContractDuration(contract.start_date, contract.end_date);
+        return {
+            'Date de début': formatDate(contract.start_date),
+            'Date de fin': formatDate(contract.end_date),
+            'Durée': formatDuration(duration),
+            'Poste': contract.position || 'Non spécifié',
+            'Statut': contract.status
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(contractsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Historique Contrats");
+    
+    // Sauvegarder le fichier
+    XLSX.writeFile(wb, `Historique_Contrats_${data.employee.last_name}_${data.employee.first_name}.xlsx`);
+}
+
+// Fonction pour exporter l'historique des contrats vers PDF
+function exportContractsToPDF(data) {
+    const doc = new jspdf.jsPDF();
+    
+    // En-tête
+    doc.setFontSize(16);
+    doc.text(`Historique des contrats - ${data.employee.last_name} ${data.employee.first_name}`, 14, 20);
+    
+    // Tableau des contrats
+    const contractsData = data.contracts.map(contract => {
+        const duration = calculateContractDuration(contract.start_date, contract.end_date);
+        return [
+            formatDate(contract.start_date),
+            formatDate(contract.end_date),
+            formatDuration(duration),
+            contract.position || 'Non spécifié',
+            contract.status
+        ];
+    });
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Date de début', 'Date de fin', 'Durée', 'Poste', 'Statut']],
+        body: contractsData,
+        theme: 'striped',
+        headStyles: { fillColor: [5, 150, 105] }
+    });
+    
+    // Sauvegarder le PDF
+    doc.save(`Historique_Contrats_${data.employee.last_name}_${data.employee.first_name}.pdf`);
+}
+
 $('#exportContractsExcel').click(function() {
     if (!currentContractsData) return;
     
-    const data = currentContractsData.contracts.map(contract => ({
-        'Type': contract.type,
-        'Date de début': formatDate(contract.start_date),
-        'Date de fin': formatDate(contract.end_date),
-        'Statut': contract.status,
-        'Département': contract.department
-    }));
-    
-    // Créer une feuille Excel
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Historique Contrats");
-    
-    // Ajuster la largeur des colonnes
-    const wscols = [
-        {wch: 15}, // Type
-        {wch: 15}, // Date de début
-        {wch: 15}, // Date de fin
-        {wch: 15}, // Statut
-        {wch: 20}  // Département
-    ];
-    worksheet['!cols'] = wscols;
-
-    // Sauvegarder le fichier
-    XLSX.writeFile(workbook, `Historique_Contrats_${currentContractsData.employee.last_name}_${currentContractsData.employee.first_name}.xlsx`);
+    exportContractsToExcel(currentContractsData);
 });
 
 $('#exportContractsPDF').click(function() {
     if (!currentContractsData) return;
     
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Ajouter un arrière-plan stylisé
-    doc.setFillColor(240, 240, 240);
-    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
-    
-    // Ajouter le titre
-    doc.setFontSize(22);
-    doc.setTextColor(5, 150, 105); // Couleur verte PRESFOR
-    doc.text("Historique des Contrats", 105, 20, { align: 'center' });
-    
-    // Ajouter le nom de l'employé
-    doc.setFontSize(16);
-    doc.text(`${currentContractsData.employee.first_name} ${currentContractsData.employee.last_name}`, 105, 30, { align: 'center' });
-    
-    // Ajouter la date
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text("Date d'export: " + new Date().toLocaleDateString(), 105, 40, { align: 'center' });
-    
-    // Préparer les données pour la table
-    const columns = [
-        {header: 'Type', dataKey: 'type'},
-        {header: 'Date de début', dataKey: 'start'},
-        {header: 'Date de fin', dataKey: 'end'},
-        {header: 'Statut', dataKey: 'status'},
-        {header: 'Département', dataKey: 'dept'}
-    ];
-    
-    const rows = currentContractsData.contracts.map(contract => ({
-        type: contract.type,
-        start: formatDate(contract.start_date),
-        end: formatDate(contract.end_date),
-        status: contract.status,
-        dept: contract.department
-    }));
-
-    // Style de la table
-    doc.autoTable({
-        columns: columns,
-        body: rows,
-        startY: 50,
-        styles: {
-            fontSize: 9,
-            cellPadding: 3,
-        },
-        headStyles: {
-            fillColor: [5, 150, 105],
-            textColor: [255, 255, 255],
-            fontSize: 10,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        alternateRowStyles: {
-            fillColor: [245, 245, 245]
-        },
-        margin: {top: 50},
-        didDrawPage: function(data) {
-            // Ajouter un pied de page
-            doc.setFontSize(8);
-            doc.setTextColor(100, 100, 100);
-            doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, {
-                align: 'center'
-            });
-        }
-    });
-    
-    // Sauvegarder le PDF
-    doc.save(`Historique_Contrats_${currentContractsData.employee.last_name}_${currentContractsData.employee.first_name}.pdf`);
+    exportContractsToPDF(currentContractsData);
 });
 
 $('#printContracts').click(function() {
@@ -745,19 +712,36 @@ function calculateAge(birthDate) {
     return age;
 }
 
-// Fonction pour calculer la durée du contrat
+// Fonction pour calculer la durée entre deux dates en mois
 function calculateContractDuration(startDate, endDate) {
+    if (!startDate || !endDate) return 'Non spécifié';
+    
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-    const years = Math.floor(diffYears);
-    const months = Math.floor((diffYears - years) * 12);
     
-    return {
-        years: years,
-        months: months
-    };
+    const yearsDiff = end.getFullYear() - start.getFullYear();
+    const monthsDiff = end.getMonth() - start.getMonth();
+    
+    const totalMonths = (yearsDiff * 12) + monthsDiff;
+    
+    if (totalMonths < 0) return 'Non spécifié';
+    return totalMonths;
+}
+
+// Fonction pour formater la durée en texte
+function formatDuration(months) {
+    if (!months || months === 'Non spécifié') return 'Non spécifié';
+    
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    
+    if (years > 0) {
+        if (remainingMonths > 0) {
+            return `${years} an${years > 1 ? 's' : ''} et ${remainingMonths} mois`;
+        }
+        return `${years} an${years > 1 ? 's' : ''}`;
+    }
+    return `${months} mois`;
 }
 
 // Fonction pour convertir les mois en années et mois
@@ -907,12 +891,20 @@ $(document).ready(function() {
     // Initialisation de DataTables
     employeesTable = $('#employeesTable').DataTable({
         language: {
-            url: '/static/js/datatables-fr.json'
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
         },
         select: {
             style: 'multi',
             selector: 'td:first-child'
         },
+        order: [[1, 'asc']],
+        columnDefs: [
+            {
+                targets: 0,
+                orderable: false,
+                className: 'select-checkbox'
+            }
+        ],
         ajax: {
             url: '/api/employees',
             dataSrc: ''
@@ -987,8 +979,7 @@ $(document).ready(function() {
                     `;
                 }
             }
-        ],
-        order: [[1, 'asc']]
+        ]
     });
 
     // Gestion de la sélection des lignes
@@ -1254,6 +1245,21 @@ $(document).ready(function() {
     
     // Vérifier l'expiration lors de l'ouverture du modal
     $('#addEmployeeModal').on('shown.bs.modal', checkContractExpiration);
+
+    // Fonction pour mettre à jour l'heure
+    function updateTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        $('#currentTime').text(`${hours}:${minutes}:${seconds}`);
+    }
+
+    // Mettre à jour l'heure toutes les secondes
+    setInterval(updateTime, 1000);
+
+    // Mettre à jour l'heure immédiatement au chargement
+    updateTime();
 });
 
 // Fonction pour afficher les détails d'un employé

@@ -742,14 +742,14 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand app-title" href="#">Emploi PRESFOR</a>
-            
+            <a class="navbar-brand app-title" href="#">
+                Emploi PRESFOR
+            </a>
             <div class="d-flex align-items-center">
                 <div class="time-indicator me-3">
-                    <i class="fas fa-clock"></i>
-                    <span id="currentTime"></span>
+                    <i class="far fa-clock me-2"></i>
+                    <span id="currentTime">--:--:--</span>
                 </div>
-                
                 <div class="theme-switch-wrapper me-3">
                     <i class="fas fa-sun theme-icon"></i>
                     <label class="theme-switch">
@@ -886,9 +886,7 @@
                                 <button id="renewContractBtn" class="btn btn-warning d-none">
                                     <i class="fas fa-sync-alt me-1"></i>Reconduire les contrats
                                 </button>
-                                <button id="deleteSelectedBtn" class="btn btn-danger d-none">
-                                    <i class="fas fa-trash me-1"></i>Supprimer la sélection
-                                </button>
+
                             </div>
                             <div id="selectionCounter" class="text-muted"></div>
                         </div>
@@ -940,41 +938,36 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Historique des Contrats</h5>
-                <div class="btn-group ms-auto me-2">
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="printContracts">
-                        <i class="fas fa-print me-2"></i>Imprimer
-                    </button>
-                    <button type="button" class="btn btn-outline-success btn-sm" id="exportContractsExcel">
-                        <i class="fas fa-file-excel me-2"></i>Excel
-                    </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="exportContractsPDF">
-                        <i class="fas fa-file-pdf me-2"></i>PDF
-                    </button>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>Historique des Contrats
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Le contenu sera injecté dynamiquement -->
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th>Type</th>
-                                <th>Début</th>
-                                <th>Fin</th>
-                                <th>Statut</th>
+                                <th>Date de début</th>
+                                <th>Date de fin</th>
+                                <th>Durée</th>
                                 <th>Poste</th>
+                                <th>Statut</th>
                             </tr>
                         </thead>
-                        <tbody id="contractsHistory">
-                            <!-- Les contrats seront ajoutés ici dynamiquement -->
+                        <tbody id="contractsTableBody">
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-success" id="exportContractsExcel">
+                    <i class="fas fa-file-excel me-2"></i>Exporter Excel
+                </button>
+                <button type="button" class="btn btn-danger" id="exportContractsPDF">
+                    <i class="fas fa-file-pdf me-2"></i>Exporter PDF
+                </button>
             </div>
         </div>
     </div>
@@ -1456,21 +1449,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
-    <script src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
-    <script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
-    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/select/1.3.3/js/dataTables.select.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script>
         // Script de débogage

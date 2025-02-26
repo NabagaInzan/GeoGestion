@@ -846,27 +846,26 @@ input:checked + .slider:before {
     transform: scale(1.2);
 }
 
-/* Style pour l'horloge */
+/* Style pour l'indicateur de temps */
 .time-indicator {
+    font-size: 1rem;
+    color: var(--text-color);
+    background-color: var(--card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .time-indicator i {
-    color: white;
-    font-size: 1rem;
+    color: var(--afor-green);
+    margin-right: 0.5rem;
 }
 
 .time-indicator span {
     font-family: 'Courier New', monospace;
-    font-weight: 500;
-    font-size: 1rem;
-    color: white;
+    font-weight: 600;
 }
 
 /* Amélioration des styles DataTables */
@@ -1281,4 +1280,267 @@ input:checked + .slider:before {
 
 .navbar .btn-outline-light:hover {
     background-color: rgba(255,255,255,0.1);
+}
+
+/* Suppression des styles pour les filtres de colonnes */
+#employeesTable thead th {
+    padding: 12px !important;
+}
+
+#employeesTable thead th select {
+    display: none;
+}
+
+/* Responsive design pour les filtres */
+@media screen and (max-width: 768px) {
+    #employeesTable thead th {
+        padding: 12px !important;
+    }
+    
+    #employeesTable thead th select {
+        font-size: 0.75rem;
+        height: 25px;
+    }
+}
+
+/* Règles responsives */
+/* Grand écran */
+@media screen and (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+
+    .stats-card {
+        padding: 2rem;
+    }
+
+    .table-container {
+        padding: 2rem;
+    }
+}
+
+/* Écran moyen */
+@media screen and (max-width: 992px) {
+    .navbar .app-title {
+        font-size: 1.2rem;
+    }
+
+    .stats-card {
+        padding: 1.5rem;
+    }
+
+    .stats-card h3 {
+        font-size: 1.5rem;
+    }
+
+    .table-container {
+        padding: 1.5rem;
+    }
+
+    .btn-group {
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+        margin: 2px;
+    }
+}
+
+/* Tablette */
+@media screen and (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem;
+    }
+
+    .navbar .container-fluid {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .navbar .d-flex {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .time-indicator,
+    .theme-switch-wrapper,
+    .dropdown {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+    }
+
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+
+    .table-container {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+
+    #employeesTable {
+        font-size: 0.9rem;
+    }
+
+    .dataTables_wrapper {
+        padding: 0.5rem;
+    }
+
+    .dataTables_filter,
+    .dataTables_length {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 576px) {
+    body {
+        font-size: 14px;
+    }
+
+    .navbar .app-title {
+        font-size: 1rem;
+    }
+
+    .stats-card {
+        padding: 1rem;
+    }
+
+    .stats-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .table-container {
+        padding: 0.5rem;
+        margin: 0;
+    }
+
+    #employeesTable {
+        font-size: 0.8rem;
+    }
+
+    #employeesTable thead th {
+        padding: 0.5rem !important;
+    }
+
+    #employeesTable tbody td {
+        padding: 0.5rem;
+    }
+
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .form-floating > label {
+        font-size: 0.9rem;
+    }
+
+    .help-button {
+        width: 40px;
+        height: 40px;
+        bottom: 10px;
+        left: 10px;
+    }
+
+    .toast-container {
+        bottom: 10px;
+        right: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+/* Pour les très petits écrans */
+@media screen and (max-width: 360px) {
+    .navbar .app-title {
+        font-size: 0.9rem;
+    }
+
+    .stats-card {
+        padding: 0.75rem;
+    }
+
+    #employeesTable {
+        font-size: 0.75rem;
+    }
+
+    .modal-header {
+        padding: 0.75rem;
+    }
+
+    .modal-body {
+        padding: 0.75rem;
+    }
+
+    .form-floating > label {
+        font-size: 0.8rem;
+    }
+}
+
+/* Orientation paysage sur mobile */
+@media screen and (max-height: 576px) and (orientation: landscape) {
+    .navbar {
+        position: static;
+    }
+
+    .container {
+        margin-top: 0.5rem;
+    }
+
+    .modal-dialog {
+        max-height: 100vh;
+        margin: 0 auto;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* Support des écrans haute résolution */
+@media screen and (min-resolution: 192dpi) {
+    body {
+        font-smoothing: antialiased;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Support du mode sombre du système */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        --card-bg: rgba(17, 24, 39, 0.95);
+        --text-color: #F9FAFB;
+        --text-muted: #D1D5DB;
+        --input-bg: rgba(31, 41, 55, 0.9);
+    }
 }
