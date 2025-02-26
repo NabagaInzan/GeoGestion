@@ -754,7 +754,7 @@
                     <i class="fas fa-sun theme-icon"></i>
                     <label class="theme-switch">
                         <input type="checkbox" id="themeSwitch">
-                        <span class="slider"></span>
+                        <span class="slider round"></span>
                     </label>
                     <i class="fas fa-moon theme-icon"></i>
                 </div>
@@ -978,7 +978,9 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Reconduire les contrats</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-sync-alt me-2"></i>Reconduire les contrats
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -996,8 +998,8 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="newDuration" class="form-label">Nouvelle durée (mois)</label>
-                            <input type="number" class="form-control" id="newDuration" required min="1" value="6">
+                            <label for="renewDuration" class="form-label">Durée du contrat (mois)</label>
+                            <input type="number" class="form-control" id="renewDuration" min="1" value="3" required>
                         </div>
                         <div class="mb-3">
                             <label for="startDate" class="form-label">Date de début</label>

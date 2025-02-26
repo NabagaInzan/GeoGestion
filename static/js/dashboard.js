@@ -455,13 +455,10 @@ function exportToPDF(data) {
 
     // Style de la table
     doc.autoTable({
-        columns: columns,
-        body: rows,
         startY: 40,
-        styles: {
-            fontSize: 9,
-            cellPadding: 3,
-        },
+        head: [['Date de début', 'Date de fin', 'Durée', 'Poste', 'Statut']],
+        body: rows,
+        theme: 'striped',
         headStyles: {
             fillColor: [5, 150, 105],
             textColor: [255, 255, 255],
@@ -555,7 +552,29 @@ function exportContractsToPDF(data) {
         head: [['Date de début', 'Date de fin', 'Durée', 'Poste', 'Statut']],
         body: contractsData,
         theme: 'striped',
-        headStyles: { fillColor: [5, 150, 105] }
+        headStyles: {
+            fillColor: [5, 150, 105],
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]
+        },
+        columnStyles: {
+            0: {fontStyle: 'bold'}, // Nom en gras
+            1: {fontStyle: 'bold'}, // Prénom en gras
+        },
+        margin: {top: 40},
+        didDrawPage: function(data) {
+            // Ajouter un pied de page
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, {
+                align: 'center'
+            });
+        }
     });
     
     // Sauvegarder le PDF
@@ -1366,3 +1385,46 @@ function changePassword() {
         showAlert('danger', 'Erreur lors de la modification du mot de passe');
     });
 }
+
+// Fonction pour gérer le changement de thème
+function toggleTheme() {
+    const root = document.documentElement;
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    
+    if (isDark) {
+        root.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    } else {
+        root.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+    }
+    
+    // Mettre à jour l'apparence des éléments spécifiques
+    updateThemeSpecificElements(!isDark);
+}
+
+// Fonction pour mettre à jour les éléments spécifiques au thème
+function updateThemeSpecificElements(isDark) {
+    const navbar = document.querySelector('.navbar');
+    if (isDark) {
+        navbar.classList.remove('navbar-light', 'bg-light');
+        navbar.classList.add('navbar-dark', 'bg-dark');
+    } else {
+        navbar.classList.remove('navbar-dark', 'bg-dark');
+        navbar.classList.add('navbar-light', 'bg-light');
+    }
+}
+
+// Initialisation du thème au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const root = document.documentElement;
+    
+    if (savedTheme === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+        updateThemeSpecificElements(true);
+    }
+    
+    // Gestionnaire pour le switch de thème
+    document.querySelector('.theme-switch input[type="checkbox"]').addEventListener('change', toggleTheme);
+});

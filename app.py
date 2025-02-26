@@ -548,9 +548,23 @@ def renew_employee_contracts():
     try:
         data = request.get_json()
         employee_ids = data.get('employee_ids', [])
+        start_date = data.get('start_date')
+        duration = data.get('duration')
+        position = data.get('position')
+        availability = data.get('availability')
         
         if not employee_ids:
             return jsonify({'success': False, 'error': 'Aucun employé sélectionné'}), 400
+            
+        if not all([start_date, duration, position, availability]):
+            return jsonify({'success': False, 'error': 'Tous les champs sont requis'}), 400
+
+        # Calculer la date de fin
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = (start_date_obj + timedelta(days=int(duration) * 30)).strftime('%Y-%m-%d')
+        except ValueError as e:
+            return jsonify({'success': False, 'error': 'Format de date invalide'}), 400
             
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -565,31 +579,72 @@ def renew_employee_contracts():
             if not cursor.fetchone():
                 continue
                 
+            # Récupérer les informations du dernier contrat
+            cursor.execute("""
+                SELECT type, salary, department
+                FROM contracts 
+                WHERE employee_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """, (employee_id,))
+            
+            last_contract = cursor.fetchone()
+            if not last_contract:
+                continue
+
             # Mettre à jour le contrat existant
             cursor.execute("""
                 UPDATE contracts 
-                SET status = 'Expiré'
+                SET status = 'Expiré',
+                    updated_at = ?
                 WHERE employee_id = ? AND status = 'En cours'
-            """, (employee_id,))
+            """, (datetime.now().isoformat(), employee_id))
             
             # Créer un nouveau contrat
             new_contract_id = str(uuid.uuid4())
-            start_date = datetime.now().strftime('%Y-%m-%d')
-            end_date = (datetime.now() + timedelta(days=150)).strftime('%Y-%m-%d')
+            now = datetime.now().isoformat()
             
             cursor.execute("""
-                INSERT INTO contracts (id, employee_id, type, start_date, end_date, status)
-                VALUES (?, ?, 'CDD', ?, ?, 'En cours')
-            """, (new_contract_id, employee_id, start_date, end_date))
+                INSERT INTO contracts (
+                    id, employee_id, type, start_date, end_date,
+                    salary, department, position, status,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                new_contract_id,
+                employee_id,
+                last_contract['type'],
+                start_date,
+                end_date,
+                last_contract['salary'],
+                last_contract['department'],
+                position,
+                'En cours',
+                now,
+                now
+            ))
+            
+            # Mettre à jour l'employé
+            cursor.execute("""
+                UPDATE employees 
+                SET position = ?,
+                    availability = ?,
+                    contract_duration = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """, (position, availability, duration, now, employee_id))
             
         conn.commit()
         return jsonify({'success': True, 'message': 'Contrats renouvelés avec succès'})
         
     except Exception as e:
         print(f"Erreur lors du renouvellement des contrats: {str(e)}")
+        if conn:
+            conn.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 @app.route('/api/stats', methods=['GET'])
 @login_required
